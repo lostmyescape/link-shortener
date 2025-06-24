@@ -1,6 +1,6 @@
 # link-shortener
 
-link-shortener - сокращатель ссылок
+Link Shortener - сокращатель ссылок
 
 ## О проекте
 Проект создан на Go и использует gRPC для авторизации пользователей  
@@ -21,4 +21,4 @@ git clone https://github.com/lostmyescape/link-shortener.git
 ```bash
 go mod tidy
 ```
-4. Запуск проекта с Docker Compose:
+3. Запуск проекта с Docker Compose:
