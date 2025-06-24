@@ -13,8 +13,8 @@ link-shortener - сокращатель ссылок
 - Git
 
 ## Запуск проекта
-1. Клонируйте репозиторий:
+1. Клонируйте репозиторий:  
 ```git clone https://github.com/lostmyescape/link-shortener.git```
-2. Обновите зависимости:
+2. Обновите зависимости:  
 ```go mod tidy```
 3. Запуск проекта с Docker Compose:
