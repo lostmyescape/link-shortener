@@ -1,0 +1,7 @@
+version: '3'
+
+tasks:
+  migrations-path:
+    desc: "migrations-path"
+    cmds:
+      - go run ./cmd/migrator --dsn="postgres://postgres:asdfg@localhost:5432/sso_db?sslmode=disable" --migrations-path=./migrations
