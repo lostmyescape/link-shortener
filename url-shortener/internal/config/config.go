@@ -20,6 +20,7 @@ type Config struct {
 		Password string `yaml:"password"`
 		DbName   string `yaml:"dbname"`
 		SslMode  string `yaml:"sslmode"`
+		Token    string `yaml:"token"`
 	} `yaml:"storage"`
 }
 
@@ -32,7 +33,7 @@ type HTTPServer struct {
 }
 
 type Client struct {
-	Address      string        `yaml:"address"`
+	Address      string        `yaml:"address" env-default:"localhost:44045"`
 	Timeout      time.Duration `yaml:"timeout"`
 	RetriesCount int           `yaml:"retriesCount"`
 	Insecure     bool          `yaml:"insecure"`

@@ -7,6 +7,7 @@ storage:
   password: "asdfg"
   dbname: "golang_db"
   sslmode: "disable"
+  token: "secret-key"
 
 http_server:
   address: "localhost:8080"
