@@ -1,10 +1,7 @@
 package redirect
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	resp "github.com/lostmyescape/url-shortener/internal/lib/api/response"
@@ -33,7 +30,7 @@ func Redirect(log *slog.Logger, searchUrl URLSearcher) http.HandlerFunc {
 		// validate request
 		if alias == "" {
 			log.Error("alias is empty")
-			NewJSON(w, r, http.StatusBadRequest, resp.Error("alias is empty"))
+			resp.NewJSON(w, r, http.StatusBadRequest, resp.Error("alias is empty"))
 
 			return
 		}
@@ -42,14 +39,14 @@ func Redirect(log *slog.Logger, searchUrl URLSearcher) http.HandlerFunc {
 		url, err := searchUrl.GetUrl(alias)
 		if errors.Is(err, storage.ErrURLNotFound) {
 			log.Info("URL not found", slog.String("alias", alias))
-			NewJSON(w, r, http.StatusNotFound, resp.Error("URL not found"))
+			resp.NewJSON(w, r, http.StatusNotFound, resp.Error("URL not found"))
 
 			return
 		}
 
 		if err != nil {
 			log.Error("failed searching URL", sl.Err(err))
-			NewJSON(w, r, http.StatusInternalServerError, resp.Error("internal error"))
+			resp.NewJSON(w, r, http.StatusInternalServerError, resp.Error("internal error"))
 
 			return
 		}
@@ -58,21 +55,4 @@ func Redirect(log *slog.Logger, searchUrl URLSearcher) http.HandlerFunc {
 
 		http.Redirect(w, r, url, http.StatusFound)
 	}
-}
-
-func NewJSON(w http.ResponseWriter, _ *http.Request, status int, v interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-
-	var buf bytes.Buffer
-	enc := json.NewEncoder(&buf)
-	enc.SetEscapeHTML(true)
-
-	if err := enc.Encode(v); err != nil {
-		w.WriteHeader(status)
-		fmt.Fprintf(w, `{"error": "failed to encode response"}`)
-		return
-	}
-
-	w.WriteHeader(status)
-	buf.WriteTo(w)
 }

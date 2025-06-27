@@ -8,7 +8,8 @@ option go_package = "lostmyescape.sso.v1;ssov1";
 service Auth {
   rpc Register (RegisterRequest) returns (RegisterResponse);
   rpc Login (LoginRequest) returns (LoginResponse);
-  rpc IsAdmin(IsAdminRequest) returns (IsAdminResponse);
+  rpc IsAdmin (IsAdminRequest) returns (IsAdminResponse);
+  rpc ValidateUser (ValidateUserRequest) returns (ValidateUserResponse);
 }
 
 // Объект, который отправляется при вызове RPC-метода (ручки) Register.
@@ -39,4 +40,13 @@ message IsAdminRequest {
 
 message IsAdminResponse {
   bool is_admin = 1;
+}
+
+message ValidateUserRequest {
+  int32 uid = 1;
+}
+
+message ValidateUserResponse {
+  bool exists = 1;
+  string email = 2;
 }

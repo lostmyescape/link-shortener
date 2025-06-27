@@ -12,6 +12,7 @@ import (
 	"github.com/lostmyescape/url-shortener/internal/http-server/handlers/redirect"
 	"github.com/lostmyescape/url-shortener/internal/http-server/handlers/url/save"
 	mwLogger "github.com/lostmyescape/url-shortener/internal/http-server/logger/middleware"
+	"github.com/lostmyescape/url-shortener/internal/lib/jwt/mdjwt"
 	"github.com/lostmyescape/url-shortener/internal/lib/logger/handlers/slogpretty"
 	"github.com/lostmyescape/url-shortener/internal/lib/logger/sl"
 	dbstorage "github.com/lostmyescape/url-shortener/internal/storage"
@@ -74,15 +75,21 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
+	// init jwt-secret
+	mdjwt.InitJWT(cfg.Storage.Token)
+
 	router.Route("/url", func(r chi.Router) {
-		r.Use(middleware.BasicAuth("url-shortener", map[string]string{
-			cfg.HTTPServer.User: cfg.HTTPServer.Password,
-		}))
+		//r.Use(middleware.BasicAuth("url-shortener", map[string]string{
+		//	cfg.HTTPServer.User: cfg.HTTPServer.Password,
+		//}))
+		r.Use(mdjwt.JWTAuthMiddleware)
 		r.Post("/", save.New(log, storage))
 		r.Delete("/{alias}", deleteURL.New(log, storage))
 	})
 
 	router.Get("/{alias}", redirect.Redirect(log, storage))
+	router.Post("/register", ssoClient.Register(context.Background(), log))
+	router.Post("/login", ssoClient.Login(context.Background(), log))
 
 	log.Info("starting server", slog.String("address", cfg.HTTPServer.Address))
 
@@ -91,11 +98,10 @@ func main() {
 		Handler:      router,
 		ReadTimeout:  cfg.HTTPServer.Timeout,
 		WriteTimeout: cfg.HTTPServer.Timeout,
-		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
-	}
+		IdleTimeout:  cfg.HTTPServer.IdleTimeout}
 
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Error("failed to start server: %v", err)
+		log.Error("failed to start server", err)
 	}
 
 	log.Error("server stopped")

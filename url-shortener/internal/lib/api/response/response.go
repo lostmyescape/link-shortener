@@ -1,8 +1,11 @@
 package response
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/go-playground/validator/v10"
+	"net/http"
 	"strings"
 )
 
@@ -15,6 +18,11 @@ type Response struct {
 	Status string `json:"status"`
 	Error  string `json:"error,omitempty"`
 	Alias  string `json:"alias,omitempty"`
+}
+
+type AliasResponse struct {
+	Response
+	Alias string
 }
 
 const (
@@ -54,4 +62,28 @@ func ValidationError(errs validator.ValidationErrors) Response {
 		Status: StatusError,
 		Error:  strings.Join(errMsgs, ", "),
 	}
+}
+
+func NewJSON(w http.ResponseWriter, _ *http.Request, status int, v interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(true)
+
+	if err := enc.Encode(v); err != nil {
+		w.WriteHeader(status)
+		fmt.Fprintf(w, `{"error": "failed to encode response"}`)
+		return
+	}
+
+	w.WriteHeader(status)
+	buf.WriteTo(w)
+}
+
+func RespOk(w http.ResponseWriter, r *http.Request, alias string) {
+	NewJSON(w, r, http.StatusOK, AliasResponse{
+		Response: OK(),
+		Alias:    alias,
+	})
 }

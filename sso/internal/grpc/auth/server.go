@@ -30,6 +30,11 @@ const (
 	emptyValue = 0
 )
 
+//func (s *serverAPI) ValidateUser(
+//	ctx context.Context,
+//	req *ssov1.
+//	)
+
 func (s *serverAPI) Login(
 	ctx context.Context,
 	req *ssov1.LoginRequest,

@@ -1,14 +1,12 @@
 package save
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
 	resp "github.com/lostmyescape/url-shortener/internal/lib/api/response"
+	"github.com/lostmyescape/url-shortener/internal/lib/jwt/mdjwt"
 	"github.com/lostmyescape/url-shortener/internal/lib/logger/sl"
 	"github.com/lostmyescape/url-shortener/internal/lib/random"
 	"github.com/lostmyescape/url-shortener/internal/storage"
@@ -42,13 +40,21 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
 
+		// TODO: get uid for jwt
+		_, ok := mdjwt.GetUserID(r.Context())
+
+		if !ok {
+			resp.NewJSON(w, r, http.StatusUnauthorized, resp.Error("unauthorized"))
+			return
+		}
+
 		var req Request
 
 		// decode body
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
 			log.Error("failed to decode request body", sl.Err(err))
-			NewJSON(w, r, http.StatusBadRequest, resp.Error("invalid request body"))
+			resp.NewJSON(w, r, http.StatusBadRequest, resp.Error("invalid request body"))
 
 			return
 		}
@@ -61,7 +67,7 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 			errors.As(err, &validateErr)
 
 			log.Error("invalid request", sl.Err(err))
-			NewJSON(w, r, http.StatusBadRequest, resp.ValidationError(validateErr))
+			resp.NewJSON(w, r, http.StatusBadRequest, resp.ValidationError(validateErr))
 
 			return
 		}
@@ -78,44 +84,20 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 			switch {
 			case errors.Is(err, storage.ErrURLExists):
 				log.Error("URL already exists", sl.Err(err))
-				NewJSON(w, r, http.StatusConflict, resp.Error("URL already exists"))
+				resp.NewJSON(w, r, http.StatusConflict, resp.Error("URL already exists"))
 				return
 			case errors.Is(err, storage.ErrAliasExists):
 				log.Error("alias already exists", sl.Err(err))
-				NewJSON(w, r, http.StatusConflict, resp.Error("alias already exists"))
+				resp.NewJSON(w, r, http.StatusConflict, resp.Error("alias already exists"))
 				return
 			default:
 				log.Error("failed to add error")
-				NewJSON(w, r, http.StatusInternalServerError, resp.Error("failed to add URL"))
+				resp.NewJSON(w, r, http.StatusInternalServerError, resp.Error("failed to add URL"))
 				return
 			}
 
 		}
 		log.Info("url added", slog.Int64("id", id))
-		responseOk(w, r, alias)
+		resp.RespOk(w, r, alias)
 	}
-}
-
-func NewJSON(w http.ResponseWriter, _ *http.Request, status int, v interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-
-	var buf bytes.Buffer
-	enc := json.NewEncoder(&buf)
-	enc.SetEscapeHTML(true)
-
-	if err := enc.Encode(v); err != nil {
-		w.WriteHeader(status)
-		fmt.Fprintf(w, `{"error": "failed to encode response"}`)
-		return
-	}
-
-	w.WriteHeader(status)
-	buf.WriteTo(w)
-}
-
-func responseOk(w http.ResponseWriter, r *http.Request, alias string) {
-	NewJSON(w, r, http.StatusOK, Response{
-		Response: resp.OK(),
-		Alias:    alias,
-	})
 }
