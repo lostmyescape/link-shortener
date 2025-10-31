@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
+	"log"
 	"net/http"
 	"strings"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type contextKey string
@@ -24,6 +26,7 @@ func InitJWT(secret string) {
 func JWTAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
+		log.Println("Auth header:", authHeader)
 		if authHeader == "" {
 			http.Error(w, "missing auth header", http.StatusUnauthorized)
 			return
@@ -58,7 +61,7 @@ func parseToken(w http.ResponseWriter, tokenString string) (jwt.MapClaims, error
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
-		return jwtSecret, nil
+		return []byte(jwtSecret), nil
 	})
 
 	if err != nil || !token.Valid {

@@ -2,6 +2,9 @@ package save
 
 import (
 	"errors"
+	"log/slog"
+	"net/http"
+
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
@@ -10,8 +13,6 @@ import (
 	"github.com/lostmyescape/url-shortener/internal/lib/logger/sl"
 	"github.com/lostmyescape/url-shortener/internal/lib/random"
 	"github.com/lostmyescape/url-shortener/internal/storage"
-	"log/slog"
-	"net/http"
 )
 
 type Request struct {
@@ -40,7 +41,6 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
 
-		// TODO: get uid for jwt
 		_, ok := mdjwt.GetUserID(r.Context())
 
 		if !ok {

@@ -4,6 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log/slog"
+	"net/http"
+	"os"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	ssogrpc "github.com/lostmyescape/url-shortener/internal/clients/sso/grpc"
@@ -16,9 +20,6 @@ import (
 	"github.com/lostmyescape/url-shortener/internal/lib/logger/handlers/slogpretty"
 	"github.com/lostmyescape/url-shortener/internal/lib/logger/sl"
 	dbstorage "github.com/lostmyescape/url-shortener/internal/storage"
-	"log/slog"
-	"net/http"
-	"os"
 )
 
 const (

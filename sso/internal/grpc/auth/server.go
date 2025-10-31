@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+
 	"github.com/asaskevich/govalidator"
 	ssov1 "github.com/lostmyescape/protos/gen/go/sso"
 	"github.com/lostmyescape/sso/internal/services/auth"
@@ -29,11 +30,6 @@ func Register(gRPC *grpc.Server, auth Auth) {
 const (
 	emptyValue = 0
 )
-
-//func (s *serverAPI) ValidateUser(
-//	ctx context.Context,
-//	req *ssov1.
-//	)
 
 func (s *serverAPI) Login(
 	ctx context.Context,

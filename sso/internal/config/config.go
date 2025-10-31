@@ -1,9 +1,10 @@
 package config
 
 import (
-	"github.com/ilyakaznacheev/cleanenv"
 	"os"
 	"time"
+
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
@@ -30,7 +31,8 @@ type Storage struct {
 func MustLoad() *Config {
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
-		configPath = "../../config/config.yaml"
+		configPath = "config/config.yaml"
+		//configPath = "../../config/config.yaml"
 	}
 
 	return MustLoadByPath(configPath)

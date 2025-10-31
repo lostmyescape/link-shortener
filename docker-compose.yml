@@ -1,0 +1,69 @@
+services:
+  auth-db:
+    image: postgres:15
+    container_name: auth-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: asdfg
+      POSTGRES_DB: sso_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+
+  shortener-db:
+    image: postgres:15
+    container_name: shortener-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: asdfg
+      POSTGRES_DB: shortener_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - short_db_data:/var/lib/postgresql/data
+
+  auth:
+    build: ./sso
+    depends_on:
+      - auth-db
+      - redis
+    environment:
+      DB_HOST: auth-db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: asdfg
+      DB_NAME: sso_db
+      REDIS_ADDR: redis:6379
+    ports:
+      - "44045:44045"
+    volumes:
+      - ./sso/config:/app/config
+
+  shortener:
+    build: ./url-shortener
+    depends_on:
+      - shortener-db
+      - auth
+    environment:
+      DB_HOST: shortener-db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: asdfg
+      DB_NAME: shortener_db
+      AUTH_SERVICE_URL: auth:8080
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./url-shortener/config:/app/config
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+
+volumes:
+  auth_db_data:
+  short_db_data:

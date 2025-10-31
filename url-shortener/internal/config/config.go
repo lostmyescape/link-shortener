@@ -1,10 +1,11 @@
 package config
 
 import (
-	"github.com/ilyakaznacheev/cleanenv"
 	"log"
 	"os"
 	"time"
+
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
@@ -46,7 +47,7 @@ type ClientsConfig struct {
 func LoadConfig() *Config {
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
-		configPath = "../config/config.yaml"
+		configPath = "config/config.yaml"
 	}
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {

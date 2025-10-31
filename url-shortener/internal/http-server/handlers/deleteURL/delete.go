@@ -2,13 +2,15 @@ package deleteURL
 
 import (
 	"errors"
+	"log/slog"
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	resp "github.com/lostmyescape/url-shortener/internal/lib/api/response"
+	"github.com/lostmyescape/url-shortener/internal/lib/jwt/mdjwt"
 	"github.com/lostmyescape/url-shortener/internal/lib/logger/sl"
 	"github.com/lostmyescape/url-shortener/internal/storage"
-	"log/slog"
-	"net/http"
 )
 
 type Response struct {
@@ -30,6 +32,13 @@ func New(log *slog.Logger, delete URLDeleter) http.HandlerFunc {
 		)
 
 		alias := chi.URLParam(r, "alias")
+
+		_, ok := mdjwt.GetUserID(r.Context())
+
+		if !ok {
+			resp.NewJSON(w, r, http.StatusUnauthorized, resp.Error("unauthorized"))
+			return
+		}
 
 		if alias == "" {
 			log.Error("alias is empty")

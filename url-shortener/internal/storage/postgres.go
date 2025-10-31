@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
+
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 	"github.com/lostmyescape/url-shortener/internal/config"
-	"log"
 )
 
 type Storage struct {

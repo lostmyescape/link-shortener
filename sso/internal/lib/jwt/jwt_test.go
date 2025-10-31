@@ -1,10 +1,11 @@
 package jwt
 
 import (
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/lostmyescape/sso/internal/domain/models"
 	"testing"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/lostmyescape/sso/internal/domain/models"
 )
 
 func TestNewToken(t *testing.T) {
@@ -14,7 +15,7 @@ func TestNewToken(t *testing.T) {
 	}
 	app := models.App{
 		ID:     23,
-		Secret: "secretkey",
+		Secret: "secret-key",
 	}
 
 	duration := time.Hour

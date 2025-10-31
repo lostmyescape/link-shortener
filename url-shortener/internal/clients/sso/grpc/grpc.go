@@ -3,6 +3,10 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"net/http"
+	"time"
+
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	grpclog "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
@@ -13,9 +17,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
-	"log/slog"
-	"net/http"
-	"time"
+	"google.golang.org/grpc/status"
 )
 
 type Client struct {
@@ -117,12 +119,32 @@ func (c *Client) Register(_ context.Context, log *slog.Logger) http.HandlerFunc 
 			Email:    req.Email,
 			Password: req.Password,
 		})
-		if err != nil {
-			log.Error("gRPC Register failed", sl.Err(err))
-			resp.NewJSON(w, r, http.StatusUnauthorized, resp.Error("register failed"))
 
+		if err != nil {
+			st, ok := status.FromError(err)
+			if !ok {
+				log.Error("gRPC Register failed", sl.Err(err))
+				resp.NewJSON(w, r, http.StatusUnauthorized, resp.Error("register failed"))
+				return
+			}
+
+			var code int
+			switch st.Code() {
+			case codes.AlreadyExists:
+				code = http.StatusConflict
+			case codes.InvalidArgument:
+				code = http.StatusBadRequest
+			case codes.Unauthenticated:
+				code = http.StatusUnauthorized
+			default:
+				code = http.StatusInternalServerError
+			}
+
+			log.Error("gRPC Register failed", slog.String("grpc_code", st.Code().String()), sl.Err(err))
+			resp.NewJSON(w, r, code, resp.Error(st.Message()))
 			return
 		}
+
 		if respGRPC.UserId == 0 {
 			log.Error("registration failed: grpc returns false")
 			resp.NewJSON(w, r, http.StatusConflict, "error")
@@ -165,8 +187,25 @@ func (c *Client) Login(_ context.Context, log *slog.Logger) http.HandlerFunc {
 			AppId:    req.AppID,
 		})
 		if err != nil {
-			resp.NewJSON(w, r, http.StatusUnauthorized, resp.Error("login failed"))
+			st, ok := status.FromError(err)
+			if !ok {
+				log.Error("gRPC Login failed", slog.String("error", err.Error()))
+				resp.NewJSON(w, r, http.StatusUnauthorized, resp.Error("login failed"))
+				return
+			}
 
+			var code int
+			switch st.Code() {
+			case codes.InvalidArgument, codes.NotFound:
+				code = http.StatusBadRequest
+			case codes.Unauthenticated:
+				code = http.StatusUnauthorized
+			default:
+				code = http.StatusInternalServerError
+			}
+
+			log.Error("gRPC Login failed", slog.String("grpc_code", st.Code().String()), sl.Err(err))
+			resp.NewJSON(w, r, code, resp.Error(st.Message()))
 			return
 		}
 
