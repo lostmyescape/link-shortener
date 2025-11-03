@@ -20,6 +20,11 @@ type Auth struct {
 	usrProvider UserProvider
 	appProvider AppProvider
 	tokenTTL    time.Duration
+	TokenStore  TokenStore
+}
+
+type TokenStore interface {
+	SaveToken(ctx context.Context, userID int64, token string, ttl time.Duration) error
 }
 
 type UserSaver interface {
@@ -115,6 +120,8 @@ func (a *Auth) Login(
 
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
+
+	_ = a.TokenStore.SaveToken(ctx, user.ID, token, a.tokenTTL)
 
 	log.Info("token was generated")
 

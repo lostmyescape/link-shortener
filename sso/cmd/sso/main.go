@@ -1,13 +1,15 @@
 package main
 
 import (
-	"github.com/lostmyescape/sso/internal/app"
-	"github.com/lostmyescape/sso/internal/config"
-	"github.com/lostmyescape/sso/internal/lib/logger/handlers/slogpretty"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/lostmyescape/sso/internal/app"
+	"github.com/lostmyescape/sso/internal/config"
+	"github.com/lostmyescape/sso/internal/lib/logger/handlers/slogpretty"
+	"github.com/lostmyescape/sso/internal/storage/redis"
 )
 
 const (
@@ -26,6 +28,9 @@ func main() {
 	application := app.New(log, cfg.GRPC.Port, cfg, cfg.TokenTTL)
 
 	go application.GRPCSrv.MustRun()
+
+	rdb := redis.NewClient(cfg)
+	defer rdb.Close()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
