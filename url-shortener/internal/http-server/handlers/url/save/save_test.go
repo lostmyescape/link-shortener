@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/lostmyescape/url-shortener/internal/http-server/handlers/url/save/mocks"
-	"github.com/lostmyescape/url-shortener/internal/lib/logger/handlers/slogdiscard"
-	"github.com/lostmyescape/url-shortener/internal/storage"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/url/save/mocks"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/logger/handlers/slogdiscard"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/storage"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSaveHandler(t *testing.T) {

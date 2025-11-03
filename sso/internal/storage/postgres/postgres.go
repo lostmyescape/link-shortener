@@ -5,12 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
+
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 	"github.com/lostmyescape/link-shortener/sso/internal/config"
 	"github.com/lostmyescape/link-shortener/sso/internal/domain/models"
 	"github.com/lostmyescape/link-shortener/sso/internal/storage"
-	"log"
 )
 
 type Storage struct {

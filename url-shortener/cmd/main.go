@@ -10,16 +10,16 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	ssogrpc "github.com/lostmyescape/url-shortener/internal/clients/sso/grpc"
-	"github.com/lostmyescape/url-shortener/internal/config"
-	"github.com/lostmyescape/url-shortener/internal/http-server/handlers/deleteURL"
-	"github.com/lostmyescape/url-shortener/internal/http-server/handlers/redirect"
-	"github.com/lostmyescape/url-shortener/internal/http-server/handlers/url/save"
-	mwLogger "github.com/lostmyescape/url-shortener/internal/http-server/logger/middleware"
-	"github.com/lostmyescape/url-shortener/internal/lib/jwt/mdjwt"
-	"github.com/lostmyescape/url-shortener/internal/lib/logger/handlers/slogpretty"
-	"github.com/lostmyescape/url-shortener/internal/lib/logger/sl"
-	dbstorage "github.com/lostmyescape/url-shortener/internal/storage"
+	ssogrpc "github.com/lostmyescape/link-shortener/url-shortener/internal/clients/sso/grpc"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/config"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/deleteURL"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/redirect"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/url/save"
+	mwLogger "github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/logger/middleware"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/jwt/mdjwt"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/logger/handlers/slogpretty"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/logger/sl"
+	dbstorage "github.com/lostmyescape/link-shortener/url-shortener/internal/storage"
 )
 
 const (

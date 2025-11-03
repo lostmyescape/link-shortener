@@ -1,17 +1,20 @@
 package redirect
 
+//go:generate mockery --name URLSearcher
+
 import (
 	"errors"
-	"github.com/go-chi/chi/v5"
-	"github.com/lostmyescape/url-shortener/internal/http-server/handlers/redirect/mocks"
-	"github.com/lostmyescape/url-shortener/internal/lib/api"
-	"github.com/lostmyescape/url-shortener/internal/lib/logger/handlers/slogdiscard"
-	"github.com/lostmyescape/url-shortener/internal/storage"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/redirect/mocks"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/api"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/logger/handlers/slogdiscard"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/storage"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRedirectHandler(t *testing.T) {

@@ -1,10 +1,10 @@
 # .mockery.yaml
 with-expecter: true
+all: false
+recursive: true
 packages:
-  github.com/lostmyescape/url-shortener/internal/httpserver/handlers/url/save:
-    interfaces:
-      URLSaver:
-        config:
-          dir: /internal/storage
-          output: ./internal/mocks
-          outpkg: mocks
+  github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/redirect:
+    config:
+      dir: internal/http-server/handlers/redirect
+      output: internal/http-server/handlers/redirect/mocks
+      outpkg: mocks

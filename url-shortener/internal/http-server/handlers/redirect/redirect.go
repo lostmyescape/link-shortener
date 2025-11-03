@@ -2,16 +2,17 @@ package redirect
 
 import (
 	"errors"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	resp "github.com/lostmyescape/url-shortener/internal/lib/api/response"
-	"github.com/lostmyescape/url-shortener/internal/lib/logger/sl"
-	"github.com/lostmyescape/url-shortener/internal/storage"
 	"log/slog"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	resp "github.com/lostmyescape/link-shortener/url-shortener/internal/lib/api/response"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/logger/sl"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/storage"
 )
 
-//go:generate mockery --name=URLSearcher --dir=. --output=./mocks --filename=URLSearcher.go --outpkg=mocks
+//go:generate mockery --name=URLSearcher --dir=. --output=./mocks --filename=url_redirect_mock.go --outpkg=mocks
 type URLSearcher interface {
 	GetUrl(alias string) (string, error)
 }
@@ -35,7 +36,7 @@ func Redirect(log *slog.Logger, searchUrl URLSearcher) http.HandlerFunc {
 			return
 		}
 
-		// trying to get an url
+		// trying to get a url
 		url, err := searchUrl.GetUrl(alias)
 		if errors.Is(err, storage.ErrURLNotFound) {
 			log.Info("URL not found", slog.String("alias", alias))

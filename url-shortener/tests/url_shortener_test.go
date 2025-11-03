@@ -1,16 +1,17 @@
 package tests
 
 import (
-	"github.com/brianvoe/gofakeit/v6"
-	"github.com/gavv/httpexpect/v2"
-	"github.com/lostmyescape/url-shortener/internal/http-server/handlers/url/save"
-	"github.com/lostmyescape/url-shortener/internal/lib/api"
-	"github.com/lostmyescape/url-shortener/internal/lib/random"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/url"
 	"path"
 	"testing"
+
+	"github.com/brianvoe/gofakeit/v6"
+	"github.com/gavv/httpexpect/v2"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/url/save"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/api"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/random"
+	"github.com/stretchr/testify/require"
 )
 
 const (

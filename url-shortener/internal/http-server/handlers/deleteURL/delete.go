@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	resp "github.com/lostmyescape/url-shortener/internal/lib/api/response"
-	"github.com/lostmyescape/url-shortener/internal/lib/jwt/mdjwt"
-	"github.com/lostmyescape/url-shortener/internal/lib/logger/sl"
-	"github.com/lostmyescape/url-shortener/internal/storage"
+	resp "github.com/lostmyescape/link-shortener/url-shortener/internal/lib/api/response"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/jwt/mdjwt"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/logger/sl"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/storage"
 )
 
 type Response struct {

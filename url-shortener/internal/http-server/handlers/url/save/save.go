@@ -8,11 +8,11 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
-	resp "github.com/lostmyescape/url-shortener/internal/lib/api/response"
-	"github.com/lostmyescape/url-shortener/internal/lib/jwt/mdjwt"
-	"github.com/lostmyescape/url-shortener/internal/lib/logger/sl"
-	"github.com/lostmyescape/url-shortener/internal/lib/random"
-	"github.com/lostmyescape/url-shortener/internal/storage"
+	resp "github.com/lostmyescape/link-shortener/url-shortener/internal/lib/api/response"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/jwt/mdjwt"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/logger/sl"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/random"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/storage"
 )
 
 type Request struct {

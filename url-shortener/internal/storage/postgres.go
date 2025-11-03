@@ -8,7 +8,7 @@ import (
 
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
-	"github.com/lostmyescape/url-shortener/internal/config"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/config"
 )
 
 type Storage struct {
