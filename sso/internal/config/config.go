@@ -12,6 +12,7 @@ type Config struct {
 	TokenTTL time.Duration `yaml:"token_ttl" env-required:"true"`
 	GRPC     GRPCConfig    `yaml:"grpc"`
 	Storage  Storage
+	Redis    RedisStorage
 }
 
 type GRPCConfig struct {
@@ -26,6 +27,12 @@ type Storage struct {
 	Password string `yaml:"password"`
 	DbName   string `yaml:"dbname"`
 	SslMode  string `yaml:"sslmode"`
+}
+
+type RedisStorage struct {
+	Addr     string `yam:"addr"`
+	Password string `yam:"password"`
+	DB       int    `yam:"db"`
 }
 
 func MustLoad() *Config {

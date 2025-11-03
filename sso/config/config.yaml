@@ -12,3 +12,8 @@ storage:
   dbname: "sso_db"
   sslmode: "disable"
 
+redis:
+  addr: "redis:6379"
+  password: "asdfg"
+  DB: 0
+
