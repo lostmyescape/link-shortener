@@ -48,8 +48,7 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 
 		userID := int(uidFloat)
 
-		//storedToken, err := (r.Context(), userID)
-		//
+		//storedToken, err := TokenStore.
 		//if err != nil || storedToken != tokenString {
 		//	http.Error(w, "failed token", http.StatusUnauthorized)
 		//	return
