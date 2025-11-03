@@ -1,14 +1,15 @@
 package app
 
 import (
-	grpcapp "github.com/lostmyescape/sso/internal/app/grpc"
-	"github.com/lostmyescape/sso/internal/config"
-	"github.com/lostmyescape/sso/internal/lib/logger/sl"
-	"github.com/lostmyescape/sso/internal/services/auth"
-	"github.com/lostmyescape/sso/internal/storage/postgres"
 	"log/slog"
 	"os"
 	"time"
+
+	grpcapp "github.com/lostmyescape/link-shortener/sso/internal/app/grpc"
+	"github.com/lostmyescape/link-shortener/sso/internal/config"
+	"github.com/lostmyescape/link-shortener/sso/internal/lib/logger/sl"
+	"github.com/lostmyescape/link-shortener/sso/internal/services/auth"
+	"github.com/lostmyescape/link-shortener/sso/internal/storage/postgres"
 )
 
 type App struct {

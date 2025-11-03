@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
-	"github.com/lostmyescape/sso/internal/config"
-	"github.com/lostmyescape/sso/internal/domain/models"
-	"github.com/lostmyescape/sso/internal/storage"
+	"github.com/lostmyescape/link-shortener/sso/internal/config"
+	"github.com/lostmyescape/link-shortener/sso/internal/domain/models"
+	"github.com/lostmyescape/link-shortener/sso/internal/storage"
 	"log"
 )
 

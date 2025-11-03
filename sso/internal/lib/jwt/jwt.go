@@ -2,7 +2,7 @@ package jwt
 
 import (
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/lostmyescape/sso/internal/domain/models"
+	"github.com/lostmyescape/link-shortener/sso/internal/domain/models"
 
 	"time"
 )

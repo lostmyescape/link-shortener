@@ -48,7 +48,7 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 
 		userID := int(uidFloat)
 
-		//storedToken, err := redis.GetToken(r.Context(), userID)
+		//storedToken, err := redis.Get(r.Context(), userID)
 		//
 		//if err != nil || storedToken != tokenString {
 		//	http.Error(w, "failed token", http.StatusUnauthorized)

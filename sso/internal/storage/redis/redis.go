@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/lostmyescape/sso/internal/config"
+	"github.com/lostmyescape/link-shortener/sso/internal/config"
 	"github.com/redis/go-redis/v9"
 )
 

@@ -2,7 +2,7 @@ package grpc
 
 import (
 	"fmt"
-	authgrpc "github.com/lostmyescape/sso/internal/grpc/auth"
+	authgrpc "github.com/lostmyescape/link-shortener/sso/internal/grpc/auth"
 	"google.golang.org/grpc"
 	"log/slog"
 	"net"

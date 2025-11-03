@@ -6,10 +6,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/lostmyescape/sso/internal/app"
-	"github.com/lostmyescape/sso/internal/config"
-	"github.com/lostmyescape/sso/internal/lib/logger/handlers/slogpretty"
-	"github.com/lostmyescape/sso/internal/storage/redis"
+	"github.com/lostmyescape/link-shortener/sso/internal/app"
+	"github.com/lostmyescape/link-shortener/sso/internal/config"
+	"github.com/lostmyescape/link-shortener/sso/internal/lib/logger/handlers/slogpretty"
+	"github.com/lostmyescape/link-shortener/sso/internal/storage/redis"
 )
 
 const (

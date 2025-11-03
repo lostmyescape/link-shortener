@@ -7,10 +7,10 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/lostmyescape/sso/internal/domain/models"
-	"github.com/lostmyescape/sso/internal/lib/jwt"
-	"github.com/lostmyescape/sso/internal/lib/logger/sl"
-	"github.com/lostmyescape/sso/internal/storage"
+	"github.com/lostmyescape/link-shortener/sso/internal/domain/models"
+	"github.com/lostmyescape/link-shortener/sso/internal/lib/jwt"
+	"github.com/lostmyescape/link-shortener/sso/internal/lib/logger/sl"
+	"github.com/lostmyescape/link-shortener/sso/internal/storage"
 	"golang.org/x/crypto/bcrypt"
 )
 

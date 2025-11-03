@@ -2,8 +2,8 @@ package suite
 
 import (
 	"context"
+	"github.com/lostmyescape/link-shortener/sso/internal/config"
 	ssov1 "github.com/lostmyescape/protos/gen/go/sso"
-	"github.com/lostmyescape/sso/internal/config"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"net"
