@@ -13,6 +13,7 @@ import (
 	ssogrpc "github.com/lostmyescape/link-shortener/url-shortener/internal/clients/sso/grpc"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/config"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/deleteURL"
+	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/logout"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/redirect"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/url/save"
 	mwLogger "github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/logger/middleware"
@@ -80,15 +81,13 @@ func main() {
 	mdjwt.InitJWT(cfg.Storage.Token)
 
 	router.Route("/url", func(r chi.Router) {
-		//r.Use(middleware.BasicAuth("url-shortener", map[string]string{
-		//	cfg.HTTPServer.User: cfg.HTTPServer.Password,
-		//}))
 		r.Use(mdjwt.JWTAuthMiddleware)
 		r.Post("/", save.New(log, storage))
 		r.Delete("/{alias}", deleteURL.New(log, storage))
 	})
 
 	router.Get("/{alias}", redirect.Redirect(log, storage))
+	router.Post("/logout", logout.New(log))
 	router.Post("/register", ssoClient.Register(context.Background(), log))
 	router.Post("/login", ssoClient.Login(context.Background(), log))
 

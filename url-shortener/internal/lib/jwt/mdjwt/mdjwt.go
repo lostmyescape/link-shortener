@@ -9,12 +9,15 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
+	RToken "github.com/lostmyescape/link-shortener/sso/pkg/redis"
+	"github.com/redis/go-redis/v9"
 )
 
 type contextKey string
 
 const (
 	userIDKey contextKey = "userID"
+	RedisAddr            = "localhost:6379"
 )
 
 var jwtSecret string
@@ -22,6 +25,8 @@ var jwtSecret string
 func InitJWT(secret string) {
 	jwtSecret = secret
 }
+
+var tokenStore = RToken.New(RedisAddr)
 
 func JWTAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -48,11 +53,21 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 
 		userID := int(uidFloat)
 
-		//storedToken, err := redis.
-		//if err != nil || storedToken != tokenString {
-		//	http.Error(w, "failed token", http.StatusUnauthorized)
-		//	return
-		//}
+		storedToken, err := tokenStore.GetToken(r.Context(), int64(userID))
+		if err != nil {
+			if errors.Is(err, redis.Nil) {
+				http.Error(w, "token expired or invalid", http.StatusUnauthorized)
+			} else {
+				log.Printf("Redis error: %v", err)
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+			}
+			return
+		}
+
+		if storedToken != tokenString {
+			http.Error(w, "invalid token", http.StatusUnauthorized)
+			return
+		}
 
 		ctx := context.WithValue(r.Context(), userIDKey, userID)
 

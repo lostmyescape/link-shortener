@@ -25,6 +25,7 @@ type Auth struct {
 
 type TokenStore interface {
 	SaveToken(ctx context.Context, userID int64, token string, ttl time.Duration) error
+	GetToken(ctx context.Context, userID int64) (string, error)
 }
 
 type UserSaver interface {
