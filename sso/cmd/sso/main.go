@@ -9,7 +9,8 @@ import (
 	"github.com/lostmyescape/link-shortener/sso/internal/app"
 	"github.com/lostmyescape/link-shortener/sso/internal/config"
 	"github.com/lostmyescape/link-shortener/sso/internal/lib/logger/handlers/slogpretty"
-	"github.com/lostmyescape/link-shortener/sso/internal/storage/redis"
+	redisClient "github.com/lostmyescape/link-shortener/sso/internal/storage/redis"
+	"github.com/redis/go-redis/v9"
 )
 
 const (
@@ -29,8 +30,17 @@ func main() {
 
 	go application.GRPCSrv.MustRun()
 
-	rdb := redis.NewClient(cfg)
-	defer rdb.Close()
+	rdb, err := redisClient.NewClient(cfg)
+	if err != nil {
+		log.Error("Failed connect to Redis")
+	}
+
+	defer func(rdb *redis.Client) {
+		err := rdb.Close()
+		if err != nil {
+			log.Error("failed to close Redis")
+		}
+	}(rdb)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)

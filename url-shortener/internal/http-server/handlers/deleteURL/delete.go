@@ -13,11 +13,6 @@ import (
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/storage"
 )
 
-type Response struct {
-	resp.Response
-	Alias string
-}
-
 type URLDeleter interface {
 	DeleteURL(alias string) error
 }

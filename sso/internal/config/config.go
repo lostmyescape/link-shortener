@@ -30,9 +30,9 @@ type Storage struct {
 }
 
 type RedisStorage struct {
-	Addr     string `yam:"addr"`
-	Password string `yam:"password"`
-	DB       int    `yam:"db"`
+	Addr     string `yaml:"addr"`
+	Password string `yaml:"password"`
+	DB       int    `yaml:"db"`
 }
 
 func MustLoad() *Config {
