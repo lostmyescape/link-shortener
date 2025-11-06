@@ -10,6 +10,7 @@ import (
 	"github.com/lostmyescape/link-shortener/sso/internal/config"
 	"github.com/lostmyescape/link-shortener/sso/internal/lib/logger/handlers/slogpretty"
 	redisClient "github.com/lostmyescape/link-shortener/sso/internal/storage/redis"
+	"github.com/lostmyescape/link-shortener/sso/pkg/tokenstore"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -26,21 +27,22 @@ func main() {
 
 	log.Info("starting application", slog.Any("env", cfg))
 
-	application := app.New(log, cfg.GRPC.Port, cfg, cfg.TokenTTL)
-
-	go application.GRPCSrv.MustRun()
-
 	rdb, err := redisClient.NewClient(cfg)
 	if err != nil {
-		log.Error("Failed connect to Redis")
+		panic(err)
 	}
-
 	defer func(rdb *redis.Client) {
 		err := rdb.Close()
 		if err != nil {
 			log.Error("failed to close Redis")
 		}
 	}(rdb)
+
+	tokenStore := tokenstore.NewRedisStore(rdb)
+
+	application := app.New(log, cfg.GRPC.Port, cfg, cfg.TokenTTL, tokenStore)
+
+	go application.GRPCSrv.MustRun()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)

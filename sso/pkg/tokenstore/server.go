@@ -1,4 +1,4 @@
-package redis
+package tokenstore
 
 import (
 	"context"
@@ -12,14 +12,23 @@ type TokenStore struct {
 	rdb *redis.Client
 }
 
-func New(addr string) *TokenStore {
+func NewRedisStore(rdb *redis.Client) *TokenStore {
+	return &TokenStore{rdb: rdb}
+}
+
+func New(addr, password string) *TokenStore {
 	client := redis.NewClient(&redis.Options{
-		Addr: addr,
+		Addr:     addr,
+		Password: password,
+		DB:       0,
 	})
 	return &TokenStore{rdb: client}
 }
 
 func (s *TokenStore) SaveToken(ctx context.Context, userID int64, token string, ttl time.Duration) error {
+	if s.rdb == nil {
+		panic("REDIS CLIENT IS NIL")
+	}
 	key := getKey(userID)
 	return s.rdb.Set(ctx, key, token, ttl).Err()
 }
