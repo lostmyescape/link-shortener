@@ -5,16 +5,17 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5/middleware"
-	RToken "github.com/lostmyescape/link-shortener/sso/pkg/redis"
+	"github.com/lostmyescape/link-shortener/sso/pkg/tokenstore"
 	resp "github.com/lostmyescape/link-shortener/url-shortener/internal/lib/api/response"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/jwt/mdjwt"
 )
 
 const (
-	RedisAddr = "localhost:6379"
+	RedisAddr = "redis:6379"
+	RedisPass = "asdfg"
 )
 
-var tokenStore = RToken.New(RedisAddr)
+var tokenStore = tokenstore.New(RedisAddr, RedisPass)
 
 func New(log *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

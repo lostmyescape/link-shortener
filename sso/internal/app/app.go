@@ -10,13 +10,14 @@ import (
 	"github.com/lostmyescape/link-shortener/sso/internal/lib/logger/sl"
 	"github.com/lostmyescape/link-shortener/sso/internal/services/auth"
 	"github.com/lostmyescape/link-shortener/sso/internal/storage/postgres"
+	"github.com/lostmyescape/link-shortener/sso/pkg/tokenstore"
 )
 
 type App struct {
 	GRPCSrv *grpcapp.App
 }
 
-func New(log *slog.Logger, grpcPort int, cfg *config.Config, tokenTTL time.Duration) *App {
+func New(log *slog.Logger, grpcPort int, cfg *config.Config, tokenTTL time.Duration, tokenStore *tokenstore.TokenStore) *App {
 
 	storage, err := postgres.NewStorage(cfg)
 	if err != nil {
@@ -24,9 +25,7 @@ func New(log *slog.Logger, grpcPort int, cfg *config.Config, tokenTTL time.Durat
 		os.Exit(1)
 	}
 
-	//defer storage.DB.Close()
-
-	authService := auth.New(log, storage, storage, storage, tokenTTL)
+	authService := auth.New(log, storage, storage, storage, tokenTTL, tokenStore)
 	grpcApp := grpcapp.New(log, authService, grpcPort)
 
 	return &App{

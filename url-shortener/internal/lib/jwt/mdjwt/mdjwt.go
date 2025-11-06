@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
-	RToken "github.com/lostmyescape/link-shortener/sso/pkg/redis"
+	"github.com/lostmyescape/link-shortener/sso/pkg/tokenstore"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -17,7 +17,8 @@ type contextKey string
 
 const (
 	userIDKey contextKey = "userID"
-	RedisAddr            = "localhost:6379"
+	RedisAddr            = "redis:6379"
+	RedisPass            = "asdfg"
 )
 
 var jwtSecret string
@@ -26,7 +27,7 @@ func InitJWT(secret string) {
 	jwtSecret = secret
 }
 
-var tokenStore = RToken.New(RedisAddr)
+var tokenStore = tokenstore.New(RedisAddr, RedisPass)
 
 func JWTAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

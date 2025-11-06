@@ -25,7 +25,6 @@ type Auth struct {
 
 type TokenStore interface {
 	SaveToken(ctx context.Context, userID int64, token string, ttl time.Duration) error
-	GetToken(ctx context.Context, userID int64) (string, error)
 }
 
 type UserSaver interface {
@@ -59,6 +58,7 @@ func New(
 	userProvider UserProvider,
 	appProvider AppProvider,
 	tokenTTL time.Duration,
+	tokenStore TokenStore,
 ) *Auth {
 	return &Auth{
 		log:         log,
@@ -66,6 +66,7 @@ func New(
 		usrProvider: userProvider,
 		appProvider: appProvider,
 		tokenTTL:    tokenTTL,
+		TokenStore:  tokenStore,
 	}
 }
 
@@ -122,7 +123,16 @@ func (a *Auth) Login(
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	_ = a.TokenStore.SaveToken(ctx, user.ID, token, a.tokenTTL)
+	a.log.Info("creating token store")
+	if a.TokenStore == nil {
+		a.log.Error("token store is nil, cannot save token")
+		return "", fmt.Errorf("%s: %w", op, fmt.Errorf("token store not initialized"))
+	}
+
+	if err := a.TokenStore.SaveToken(ctx, user.ID, token, a.tokenTTL); err != nil {
+		a.log.Error("failed to save token", sl.Err(err))
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
 
 	log.Info("token was generated")
 
