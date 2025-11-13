@@ -13,7 +13,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/lib/pq v1.10.9
-	github.com/lostmyescape/link-shortener/sso v0.0.0-20251106093502-34dee527568e
+	github.com/lostmyescape/link-shortener/sso v0.0.0-20251106095627-54c483aaab7f
 	github.com/lostmyescape/protos v0.0.2
 	github.com/redis/go-redis/v9 v9.16.0
 	github.com/stretchr/testify v1.11.1

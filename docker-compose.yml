@@ -59,8 +59,9 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: tokenstore
-    command: tokenstore-server --requirepass "asdfg"
+    container_name: redis
+    command: redis-server
+      --requirepass "asdfg"
     ports:
       - "6379:6379"
 

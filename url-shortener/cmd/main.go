@@ -77,17 +77,21 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
-	// init jwt-secret
-	mdjwt.InitJWT(cfg.Storage.Token)
+	jwtMiddleware := mdjwt.New(cfg, log)
+	rLogout := logout.New(cfg, log)
 
 	router.Route("/url", func(r chi.Router) {
-		r.Use(mdjwt.JWTAuthMiddleware)
+		r.Use(jwtMiddleware.JWTAuthMiddleware)
 		r.Post("/", save.New(log, storage))
 		r.Delete("/{alias}", deleteURL.New(log, storage))
 	})
 
+	router.Route("/logout", func(r chi.Router) {
+		r.Use(jwtMiddleware.JWTAuthMiddleware)
+		r.Post("/", rLogout.Logout())
+	})
+
 	router.Get("/{alias}", redirect.Redirect(log, storage))
-	router.Post("/logout", logout.New(log))
 	router.Post("/register", ssoClient.Register(context.Background(), log))
 	router.Post("/login", ssoClient.Login(context.Background(), log))
 
@@ -98,7 +102,8 @@ func main() {
 		Handler:      router,
 		ReadTimeout:  cfg.HTTPServer.Timeout,
 		WriteTimeout: cfg.HTTPServer.Timeout,
-		IdleTimeout:  cfg.HTTPServer.IdleTimeout}
+		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
+	}
 
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Error("failed to start server", err)

@@ -9,12 +9,13 @@ import (
 )
 
 type Config struct {
-	Env        string `yaml:"env"`
-	Address    string `yaml:"address"`
-	HTTPServer `yaml:"http_server"`
-	Clients    ClientsConfig `yaml:"clients"`
-	AppSecret  string        `yaml:"app_secret" env:"APP_SECRET"`
-	Storage    struct {
+	Env          string `yaml:"env"`
+	Address      string `yaml:"address"`
+	HTTPServer   `yaml:"http_server"`
+	Clients      ClientsConfig `yaml:"clients"`
+	RedisStorage RedisStorage  `yaml:"redis"`
+	AppSecret    string        `yaml:"app_secret" env:"APP_SECRET"`
+	Storage      struct {
 		Host     string `yaml:"host"`
 		Port     int    `yaml:"port"`
 		User     string `yaml:"user"`
@@ -42,6 +43,20 @@ type Client struct {
 
 type ClientsConfig struct {
 	SSO Client `yaml:"sso"`
+}
+
+type RedisStorage struct {
+	Addr     string `yaml:"addr"`
+	Password string `yaml:"password"`
+	DB       int    `yaml:"db"`
+}
+
+func (c *Config) GetRedisAddr() string {
+	return c.RedisStorage.Addr
+}
+
+func (c *Config) GetRedisPassword() string {
+	return c.RedisStorage.Password
 }
 
 func LoadConfig() *Config {

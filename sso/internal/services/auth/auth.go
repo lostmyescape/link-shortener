@@ -101,8 +101,6 @@ func (a *Auth) Login(
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	log.Info("user added")
-
 	if err := bcrypt.CompareHashAndPassword(user.PassHash, []byte(password)); err != nil {
 		a.log.Info("invalid credentials", sl.Err(err))
 
@@ -123,7 +121,6 @@ func (a *Auth) Login(
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	a.log.Info("creating token store")
 	if a.TokenStore == nil {
 		a.log.Error("token store is nil, cannot save token")
 		return "", fmt.Errorf("%s: %w", op, fmt.Errorf("token store not initialized"))
