@@ -3,8 +3,7 @@ syntax = "proto3";
 
 package auth;
 
-//option go_package = "lostmyescape.sso.v1;ssov1";
-option go_package = "github.com/lostmyescape/protos/gen/go/sso;ssov1";
+option go_package = "lostmyescape.sso.v1;ssov1";
 
 service Auth {
   rpc Register (RegisterRequest) returns (RegisterResponse);
