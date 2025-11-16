@@ -94,6 +94,7 @@ func main() {
 	router.Get("/{alias}", redirect.Redirect(log, storage))
 	router.Post("/register", ssoClient.Register(context.Background(), log))
 	router.Post("/login", ssoClient.Login(context.Background(), log))
+	router.Get("/refresh", ssoClient.Refresh(context.Background(), log))
 
 	log.Info("starting server", slog.String("address", cfg.HTTPServer.Address))
 

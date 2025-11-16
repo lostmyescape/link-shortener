@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"github.com/asaskevich/govalidator"
+	ssov1 "github.com/lostmyescape/link-shortener/protos/gen/go/sso"
 	"github.com/lostmyescape/link-shortener/sso/internal/services/auth"
-	ssov1 "github.com/lostmyescape/protos/gen/go/sso"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -16,6 +16,7 @@ type Auth interface {
 	Login(ctx context.Context, email string, password string, appID int) (token string, err error)
 	Register(ctx context.Context, email string, password string) (userID int64, err error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
+	RefreshToken(ctx context.Context, rToken string) (string, string, error)
 }
 
 type serverAPI struct {
@@ -71,6 +72,25 @@ func (s *serverAPI) Register(
 
 	return &ssov1.RegisterResponse{
 		UserId: userID,
+	}, nil
+}
+
+func (s *serverAPI) Refresh(
+	ctx context.Context,
+	req *ssov1.RefreshRequest,
+) (*ssov1.RefreshResponse, error) {
+
+	rToken, token, err := s.auth.RefreshToken(ctx, req.GetRefreshToken())
+	if err != nil {
+		if errors.Is(err, auth.ErrInvalidRefreshToken) {
+			return nil, status.Error(codes.Unauthenticated, "invalid refresh token")
+		}
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+
+	return &ssov1.RefreshResponse{
+		RefreshToken: rToken,
+		Token:        token,
 	}, nil
 }
 

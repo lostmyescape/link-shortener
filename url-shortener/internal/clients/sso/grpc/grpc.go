@@ -11,9 +11,9 @@ import (
 	"github.com/go-chi/render"
 	grpclog "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	grpcretry "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
+	ssov1 "github.com/lostmyescape/link-shortener/protos/gen/go/sso"
 	resp "github.com/lostmyescape/link-shortener/url-shortener/internal/lib/api/response"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/logger/sl"
-	ssov1 "github.com/lostmyescape/protos/gen/go/sso"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -37,6 +37,11 @@ type LoginRequest struct {
 
 type LoginResponse struct {
 	Token string `json:"token"`
+}
+
+type RefreshResponse struct {
+	RToken string `json:"refresh_token"`
+	Token  string `json:"token"`
 }
 
 func New(
@@ -210,6 +215,54 @@ func (c *Client) Login(_ context.Context, log *slog.Logger) http.HandlerFunc {
 		}
 
 		resp.NewJSON(w, r, http.StatusOK, LoginResponse{Token: response.Token})
+		return
+	}
+}
+
+func (c *Client) Refresh(_ context.Context, log *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "grpc.Refresh"
+
+		ctx := r.Context()
+
+		log = log.With(
+			slog.String("op", op),
+			slog.String("request_id", middleware.GetReqID(ctx)),
+		)
+
+		tokenString := r.Header.Get("Authorization")
+
+		response, err := c.api.Refresh(ctx, &ssov1.RefreshRequest{
+			RefreshToken: tokenString,
+		})
+		if err != nil {
+			st, ok := status.FromError(err)
+			if !ok {
+				log.Error("gRPC Refresh failed", slog.String("error", err.Error()))
+				resp.NewJSON(w, r, http.StatusUnauthorized, resp.Error("refresh failed"))
+				return
+			}
+
+			var code int
+
+			switch st.Code() {
+			case codes.Unauthenticated:
+				code = http.StatusUnauthorized
+			case codes.Internal:
+				code = http.StatusInternalServerError
+			}
+
+			log.Error("gRPC Refresh failed", slog.String("grpc_code", st.Code().String()), sl.Err(err))
+			resp.NewJSON(w, r, code, resp.Error(st.Message()))
+			return
+		}
+
+		// TODO
+
+		resp.NewJSON(w, r, http.StatusOK, RefreshResponse{
+			RToken: response.RefreshToken,
+			Token:  response.Token,
+		})
 		return
 	}
 }

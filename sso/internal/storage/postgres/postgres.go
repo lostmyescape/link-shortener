@@ -126,3 +126,22 @@ func (s *Storage) App(ctx context.Context, appID int) (models.App, error) {
 
 	return app, nil
 }
+
+func (s *Storage) TokenSecret(ctx context.Context) (string, error) {
+	const op = "storage.postgres.TokenSecret"
+
+	var tokenSecret string
+
+	err := s.DB.QueryRowContext(
+		ctx,
+		"SELECT secret FROM apps",
+	).Scan(&tokenSecret)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", storage.ErrSecretNotFound
+		}
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	return tokenSecret, nil
+}

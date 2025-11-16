@@ -1,5 +1,6 @@
 env: "local" # dev, prod
 token_ttl: 1h
+rtoken_ttl: 7d
 grpc:
   port: 44045
   timeout: 10h

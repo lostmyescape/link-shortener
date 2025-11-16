@@ -15,16 +15,17 @@ import (
 )
 
 type Auth struct {
-	log         *slog.Logger
-	usrSaver    UserSaver
-	usrProvider UserProvider
-	appProvider AppProvider
-	tokenTTL    time.Duration
-	TokenStore  TokenStore
+	log                *slog.Logger
+	usrSaver           UserSaver
+	usrProvider        UserProvider
+	appProvider        AppProvider
+	tokenTTL           time.Duration
+	tokenStoreProvider TokenStoreProvider
 }
 
-type TokenStore interface {
+type TokenStoreProvider interface {
 	SaveToken(ctx context.Context, userID int64, token string, ttl time.Duration) error
+	DeleteToken(ctx context.Context, userID int64) error
 }
 
 type UserSaver interface {
@@ -45,10 +46,11 @@ type AppProvider interface {
 }
 
 var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrInvalidAppId       = errors.New("invalid app ID")
-	ErrUserExists         = errors.New("user already exists")
-	ErrUserNotFound       = errors.New("user not found")
+	ErrInvalidCredentials  = errors.New("invalid credentials")
+	ErrInvalidAppId        = errors.New("invalid app ID")
+	ErrUserExists          = errors.New("user already exists")
+	ErrUserNotFound        = errors.New("user not found")
+	ErrInvalidRefreshToken = errors.New("invalid refresh token")
 )
 
 // New returns a new instance of the Auth service
@@ -58,15 +60,15 @@ func New(
 	userProvider UserProvider,
 	appProvider AppProvider,
 	tokenTTL time.Duration,
-	tokenStore TokenStore,
+	tokenStoreProvider TokenStoreProvider,
 ) *Auth {
 	return &Auth{
-		log:         log,
-		usrSaver:    userSaver,
-		usrProvider: userProvider,
-		appProvider: appProvider,
-		tokenTTL:    tokenTTL,
-		TokenStore:  tokenStore,
+		log:                log,
+		usrSaver:           userSaver,
+		usrProvider:        userProvider,
+		appProvider:        appProvider,
+		tokenTTL:           tokenTTL,
+		tokenStoreProvider: tokenStoreProvider,
 	}
 }
 
@@ -121,12 +123,12 @@ func (a *Auth) Login(
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	if a.TokenStore == nil {
+	if a.tokenStoreProvider == nil {
 		a.log.Error("token store is nil, cannot save token")
 		return "", fmt.Errorf("%s: %w", op, fmt.Errorf("token store not initialized"))
 	}
 
-	if err := a.TokenStore.SaveToken(ctx, user.ID, token, a.tokenTTL); err != nil {
+	if err := a.tokenStoreProvider.SaveToken(ctx, user.ID, token, a.tokenTTL); err != nil {
 		a.log.Error("failed to save token", sl.Err(err))
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
@@ -134,6 +136,51 @@ func (a *Auth) Login(
 	log.Info("token was generated")
 
 	return token, nil
+}
+
+func (a *Auth) RefreshToken(
+	ctx context.Context,
+	refreshToken string,
+) (string, string, error) {
+	const op = "auth.RefreshToken"
+
+	log := a.log.With(
+		slog.String("op", op),
+		slog.String("refreshToken", refreshToken),
+	)
+
+	app, err := a.appProvider.App(ctx, 1)
+	if err != nil {
+		return "", "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	user, err := jwt.ParseToken(refreshToken, app.Secret)
+	if err != nil {
+		return "", "", ErrInvalidRefreshToken
+	}
+
+	// delete the old token
+	_ = a.tokenStoreProvider.DeleteToken(ctx, user.ID)
+
+	log.Info("old token deleted")
+
+	token, err := jwt.NewToken(user, app, time.Hour)
+	if err != nil {
+		a.log.Error("failed to generate token", sl.Err(err))
+
+		return "", "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	rToken, err := jwt.NewToken(user, app, time.Hour*24*7)
+	if err != nil {
+		a.log.Error("failed to generate token", sl.Err(err))
+
+		return "", "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("tokens successfully generated")
+
+	return rToken, token, nil
 }
 
 // Register registers a new user in the system and returns a user ID
