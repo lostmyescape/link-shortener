@@ -6,8 +6,8 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/golang-jwt/jwt/v5"
-	ssov1 "github.com/lostmyescape/link-shortener/protos/gen/go/sso"
 	"github.com/lostmyescape/link-shortener/sso/tests/suite"
+	ssov1 "github.com/lostmyescape/protos/gen/go/sso"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

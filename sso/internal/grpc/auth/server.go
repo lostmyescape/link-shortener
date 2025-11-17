@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"github.com/asaskevich/govalidator"
-	ssov1 "github.com/lostmyescape/link-shortener/protos/gen/go/sso"
 	"github.com/lostmyescape/link-shortener/sso/internal/services/auth"
+	ssov1 "github.com/lostmyescape/protos/gen/go/sso"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
