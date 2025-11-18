@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	Env      string        `yaml:"env" env-default:"local"`
-	TokenTTL time.Duration `yaml:"token_ttl" env-required:"true"`
-	GRPC     GRPCConfig    `yaml:"grpc"`
-	Storage  Storage
-	Redis    RedisStorage
+	Env       string        `yaml:"env" env-default:"local"`
+	TokenTTL  time.Duration `yaml:"token_ttl" env-required:"true"`
+	RTokenTTL time.Duration `yaml:"r_token_ttl" env-required:"true"`
+	GRPC      GRPCConfig    `yaml:"grpc"`
+	Storage   Storage
+	Redis     RedisStorage
 }
 
 type GRPCConfig struct {

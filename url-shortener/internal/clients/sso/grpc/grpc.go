@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -36,7 +37,8 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token string `json:"token"`
+	Token  string `json:"token"`
+	RToken string `json:"refresh_token"`
 }
 
 type RefreshResponse struct {
@@ -214,7 +216,7 @@ func (c *Client) Login(_ context.Context, log *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		resp.NewJSON(w, r, http.StatusOK, LoginResponse{Token: response.Token})
+		resp.NewJSON(w, r, http.StatusOK, LoginResponse{Token: response.Token, RToken: response.RefreshToken})
 		return
 	}
 }
@@ -230,7 +232,9 @@ func (c *Client) Refresh(_ context.Context, log *slog.Logger) http.HandlerFunc {
 			slog.String("request_id", middleware.GetReqID(ctx)),
 		)
 
-		tokenString := r.Header.Get("Authorization")
+		authHeader := r.Header.Get("Authorization")
+
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
 		response, err := c.api.Refresh(ctx, &ssov1.RefreshRequest{
 			RefreshToken: tokenString,
@@ -246,8 +250,6 @@ func (c *Client) Refresh(_ context.Context, log *slog.Logger) http.HandlerFunc {
 			var code int
 
 			switch st.Code() {
-			case codes.Unauthenticated:
-				code = http.StatusUnauthorized
 			case codes.Internal:
 				code = http.StatusInternalServerError
 			}
@@ -257,11 +259,9 @@ func (c *Client) Refresh(_ context.Context, log *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		// TODO
-
 		resp.NewJSON(w, r, http.StatusOK, RefreshResponse{
-			RToken: response.RefreshToken,
 			Token:  response.Token,
+			RToken: response.RefreshToken,
 		})
 		return
 	}

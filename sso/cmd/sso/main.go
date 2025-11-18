@@ -40,7 +40,7 @@ func main() {
 
 	tokenStore := tokenstore.NewRedisStore(rdb)
 
-	application := app.New(log, cfg.GRPC.Port, cfg, cfg.TokenTTL, tokenStore)
+	application := app.New(log, cfg.GRPC.Port, cfg, cfg.TokenTTL, cfg.RTokenTTL, tokenStore)
 
 	go application.GRPCSrv.MustRun()
 

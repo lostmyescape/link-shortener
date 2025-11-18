@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/lostmyescape/link-shortener/sso/internal/domain/models"
-	"github.com/lostmyescape/link-shortener/sso/internal/lib/jwt"
 	"github.com/lostmyescape/link-shortener/sso/internal/lib/logger/sl"
 	"github.com/lostmyescape/link-shortener/sso/internal/storage"
+	"github.com/lostmyescape/link-shortener/sso/pkg/jwt"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -20,12 +21,14 @@ type Auth struct {
 	usrProvider        UserProvider
 	appProvider        AppProvider
 	tokenTTL           time.Duration
+	rTokenTTL          time.Duration
 	tokenStoreProvider TokenStoreProvider
 }
 
 type TokenStoreProvider interface {
 	SaveToken(ctx context.Context, userID int64, token string, ttl time.Duration) error
 	DeleteToken(ctx context.Context, userID int64) error
+	GetToken(ctx context.Context, userID int64) (string, error)
 }
 
 type UserSaver interface {
@@ -60,6 +63,7 @@ func New(
 	userProvider UserProvider,
 	appProvider AppProvider,
 	tokenTTL time.Duration,
+	rTokenTTL time.Duration,
 	tokenStoreProvider TokenStoreProvider,
 ) *Auth {
 	return &Auth{
@@ -68,6 +72,7 @@ func New(
 		usrProvider:        userProvider,
 		appProvider:        appProvider,
 		tokenTTL:           tokenTTL,
+		rTokenTTL:          rTokenTTL,
 		tokenStoreProvider: tokenStoreProvider,
 	}
 }
@@ -81,7 +86,7 @@ func (a *Auth) Login(
 	email string,
 	password string,
 	appID int,
-) (string, error) {
+) (string, string, error) {
 	const op = "auth.LoginUser"
 	log := a.log.With(
 		slog.String("op", op),
@@ -95,23 +100,23 @@ func (a *Auth) Login(
 		if errors.Is(err, storage.ErrUserNotFound) {
 			a.log.Warn("user not found", sl.Err(err))
 
-			return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+			return "", "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 		}
 
 		a.log.Error("failed to get user", sl.Err(err))
 
-		return "", fmt.Errorf("%s: %w", op, err)
+		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword(user.PassHash, []byte(password)); err != nil {
 		a.log.Info("invalid credentials", sl.Err(err))
 
-		return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		return "", "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
 
 	app, err := a.appProvider.App(ctx, appID)
 	if err != nil {
-		return "", fmt.Errorf("%s: %w", op, err)
+		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	log.Info("user logged successfully")
@@ -120,22 +125,29 @@ func (a *Auth) Login(
 	if err != nil {
 		a.log.Error("failed to generate token", sl.Err(err))
 
-		return "", fmt.Errorf("%s: %w", op, err)
+		return "", "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	rToken, err := jwt.NewToken(user, app, a.rTokenTTL)
+	if err != nil {
+		a.log.Error("failed to generate refresh token", sl.Err(err))
+
+		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	if a.tokenStoreProvider == nil {
 		a.log.Error("token store is nil, cannot save token")
-		return "", fmt.Errorf("%s: %w", op, fmt.Errorf("token store not initialized"))
+		return "", "", fmt.Errorf("%s: %w", op, fmt.Errorf("token store not initialized"))
 	}
 
-	if err := a.tokenStoreProvider.SaveToken(ctx, user.ID, token, a.tokenTTL); err != nil {
+	if err := a.tokenStoreProvider.SaveToken(ctx, user.ID, rToken, a.rTokenTTL); err != nil {
 		a.log.Error("failed to save token", sl.Err(err))
-		return "", fmt.Errorf("%s: %w", op, err)
+		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	log.Info("token was generated")
+	log.Info("tokens successfully generated")
 
-	return token, nil
+	return token, rToken, nil
 }
 
 func (a *Auth) RefreshToken(
@@ -156,7 +168,22 @@ func (a *Auth) RefreshToken(
 
 	user, err := jwt.ParseToken(refreshToken, app.Secret)
 	if err != nil {
+		a.log.Error("invalid token or failed to parse token", sl.Err(err))
 		return "", "", ErrInvalidRefreshToken
+	}
+
+	storedToken, err := a.tokenStoreProvider.GetToken(ctx, user.ID)
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			a.log.Error("token expired or invalid", sl.Err(err))
+			return "", "", fmt.Errorf("token expired or invalid: %w", err)
+		}
+		return "", "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	if storedToken != refreshToken {
+		a.log.Error("failed to compare tokens")
+		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	// delete the old token
@@ -164,23 +191,25 @@ func (a *Auth) RefreshToken(
 
 	log.Info("old token deleted")
 
-	token, err := jwt.NewToken(user, app, time.Hour)
+	token, err := jwt.NewToken(user, app, a.tokenTTL)
 	if err != nil {
 		a.log.Error("failed to generate token", sl.Err(err))
 
 		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	rToken, err := jwt.NewToken(user, app, time.Hour*24*7)
+	rToken, err := jwt.NewToken(user, app, a.rTokenTTL)
 	if err != nil {
-		a.log.Error("failed to generate token", sl.Err(err))
+		a.log.Error("failed to generate rToken", sl.Err(err))
 
 		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
+
+	_ = a.tokenStoreProvider.SaveToken(ctx, user.ID, rToken, a.rTokenTTL)
 
 	log.Info("tokens successfully generated")
 
-	return rToken, token, nil
+	return token, rToken, nil
 }
 
 // Register registers a new user in the system and returns a user ID
