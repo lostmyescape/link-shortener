@@ -14,7 +14,7 @@ require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/lib/pq v1.10.9
 	github.com/lostmyescape/link-shortener/sso v0.0.0-20251106095627-54c483aaab7f
-	github.com/lostmyescape/protos v0.0.3
+	github.com/lostmyescape/protos v0.0.4
 	github.com/redis/go-redis/v9 v9.16.0
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.76.0

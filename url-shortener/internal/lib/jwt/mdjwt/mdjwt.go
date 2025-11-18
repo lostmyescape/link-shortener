@@ -9,9 +9,7 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/lostmyescape/link-shortener/sso/pkg/tokenstore"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/config"
-	"github.com/redis/go-redis/v9"
 )
 
 type contextKey string
@@ -20,66 +18,44 @@ const (
 	userIDKey contextKey = "userID"
 )
 
-type Config interface {
-	GetRedisAddr() string
-	GetRedisPassword() string
+type JWTConfig struct {
+	secretKey string
+	log       *slog.Logger
 }
 
-type RDBConfig struct {
-	tokenProvider *tokenstore.TokenStore
-	secretKey     string
-	log           *slog.Logger
-}
-
-func New(cfg *config.Config, logger *slog.Logger) *RDBConfig {
-	tokenStore := tokenstore.New(cfg.GetRedisAddr(), cfg.GetRedisPassword())
-
-	return &RDBConfig{
-		tokenProvider: tokenStore,
-		secretKey:     cfg.Storage.Token,
-		log:           logger,
+func JWTMDConfig(cfg *config.Config, log *slog.Logger) *JWTConfig {
+	return &JWTConfig{
+		secretKey: cfg.Storage.Token,
+		log:       log,
 	}
 }
 
-func (rdb *RDBConfig) JWTAuthMiddleware(next http.Handler) http.Handler {
+func (j *JWTConfig) JWTAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			http.Error(w, "missing auth header", http.StatusUnauthorized)
+			j.log.Error("missing auth header")
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		claims, err := parseToken(w, tokenString, rdb)
+		claims, err := ParseToken(w, tokenString, j.secretKey)
 		if err != nil {
-			http.Error(w, "failed to parse token", http.StatusUnauthorized)
+			j.log.Error("failed to parse token")
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 
 		uidFloat, ok := claims["uid"].(float64)
 		if !ok {
-			http.Error(w, "uid missing or invalid", http.StatusUnauthorized)
+			j.log.Error("uid missing or invalid")
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 
 		userID := int(uidFloat)
-
-		storedToken, err := rdb.tokenProvider.GetToken(r.Context(), int64(userID))
-		if err != nil {
-			if errors.Is(err, redis.Nil) {
-				http.Error(w, "token expired or invalid", http.StatusUnauthorized)
-			} else {
-				rdb.log.Error("Redis error:", err)
-				http.Error(w, "internal server error", http.StatusInternalServerError)
-			}
-			return
-		}
-
-		if storedToken != tokenString {
-			http.Error(w, "invalid token", http.StatusUnauthorized)
-			return
-		}
 
 		ctx := context.WithValue(r.Context(), userIDKey, userID)
 
@@ -87,14 +63,14 @@ func (rdb *RDBConfig) JWTAuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func parseToken(w http.ResponseWriter, tokenString string, rdb *RDBConfig) (jwt.MapClaims, error) {
+func ParseToken(w http.ResponseWriter, tokenString, secretKey string) (jwt.MapClaims, error) {
 	const op = "lib.jwt.mdjwt.parseToken"
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
-		return []byte(rdb.secretKey), nil
+		return []byte(secretKey), nil
 	})
 
 	if err != nil || !token.Valid {

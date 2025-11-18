@@ -77,7 +77,7 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
-	jwtMiddleware := mdjwt.New(cfg, log)
+	jwtMiddleware := mdjwt.JWTMDConfig(cfg, log)
 	rLogout := logout.New(cfg, log)
 
 	router.Route("/url", func(r chi.Router) {

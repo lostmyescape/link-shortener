@@ -17,7 +17,7 @@ type App struct {
 	GRPCSrv *grpcapp.App
 }
 
-func New(log *slog.Logger, grpcPort int, cfg *config.Config, tokenTTL time.Duration, tokenStore *tokenstore.TokenStore) *App {
+func New(log *slog.Logger, grpcPort int, cfg *config.Config, tokenTTL time.Duration, rTokenTTL time.Duration, tokenStore *tokenstore.TokenStore) *App {
 
 	storage, err := postgres.NewStorage(cfg)
 	if err != nil {
@@ -25,7 +25,7 @@ func New(log *slog.Logger, grpcPort int, cfg *config.Config, tokenTTL time.Durat
 		os.Exit(1)
 	}
 
-	authService := auth.New(log, storage, storage, storage, tokenTTL, tokenStore)
+	authService := auth.New(log, storage, storage, storage, tokenTTL, rTokenTTL, tokenStore)
 	grpcApp := grpcapp.New(log, authService, grpcPort)
 
 	return &App{

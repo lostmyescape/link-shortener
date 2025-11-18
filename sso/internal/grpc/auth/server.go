@@ -13,7 +13,7 @@ import (
 )
 
 type Auth interface {
-	Login(ctx context.Context, email string, password string, appID int) (token string, err error)
+	Login(ctx context.Context, email string, password string, appID int) (string, string, error)
 	Register(ctx context.Context, email string, password string) (userID int64, err error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
 	RefreshToken(ctx context.Context, rToken string) (string, string, error)
@@ -40,7 +40,7 @@ func (s *serverAPI) Login(
 	if err := validateLogin(req); err != nil {
 		return nil, err
 	}
-	token, err := s.auth.Login(ctx, req.GetEmail(), req.GetPassword(), int(req.GetAppId()))
+	token, rToken, err := s.auth.Login(ctx, req.GetEmail(), req.GetPassword(), int(req.GetAppId()))
 	if err != nil {
 		if errors.Is(err, auth.ErrInvalidCredentials) {
 			return nil, status.Error(codes.InvalidArgument, "invalid email or password")
@@ -49,7 +49,8 @@ func (s *serverAPI) Login(
 	}
 
 	return &ssov1.LoginResponse{
-		Token: token,
+		Token:        token,
+		RefreshToken: rToken,
 	}, nil
 }
 
@@ -80,17 +81,17 @@ func (s *serverAPI) Refresh(
 	req *ssov1.RefreshRequest,
 ) (*ssov1.RefreshResponse, error) {
 
-	rToken, token, err := s.auth.RefreshToken(ctx, req.GetRefreshToken())
+	token, rToken, err := s.auth.RefreshToken(ctx, req.GetRefreshToken())
 	if err != nil {
 		if errors.Is(err, auth.ErrInvalidRefreshToken) {
-			return nil, status.Error(codes.Unauthenticated, "invalid refresh token")
+			return nil, status.Error(codes.Internal, "unauthorized")
 		}
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
 	return &ssov1.RefreshResponse{
-		RefreshToken: rToken,
 		Token:        token,
+		RefreshToken: rToken,
 	}, nil
 }
 
