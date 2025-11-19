@@ -9,8 +9,8 @@ import (
 	"github.com/lostmyescape/link-shortener/sso/internal/app"
 	"github.com/lostmyescape/link-shortener/sso/internal/config"
 	"github.com/lostmyescape/link-shortener/sso/internal/lib/logger/handlers/slogpretty"
+	"github.com/lostmyescape/link-shortener/sso/internal/lib/tokenstore"
 	redisClient "github.com/lostmyescape/link-shortener/sso/internal/storage/redis"
-	"github.com/lostmyescape/link-shortener/sso/pkg/tokenstore"
 	"github.com/redis/go-redis/v9"
 )
 

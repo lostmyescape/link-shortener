@@ -13,7 +13,6 @@ import (
 	ssogrpc "github.com/lostmyescape/link-shortener/url-shortener/internal/clients/sso/grpc"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/config"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/deleteURL"
-	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/logout"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/redirect"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/url/save"
 	mwLogger "github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/logger/middleware"
@@ -78,7 +77,6 @@ func main() {
 	router.Use(middleware.URLFormat)
 
 	jwtMiddleware := mdjwt.JWTMDConfig(cfg, log)
-	rLogout := logout.New(cfg, log)
 
 	router.Route("/url", func(r chi.Router) {
 		r.Use(jwtMiddleware.JWTAuthMiddleware)
@@ -88,7 +86,7 @@ func main() {
 
 	router.Route("/logout", func(r chi.Router) {
 		r.Use(jwtMiddleware.JWTAuthMiddleware)
-		r.Post("/", rLogout.Logout())
+		r.Post("/", ssoClient.Logout(context.Background(), log))
 	})
 
 	router.Get("/{alias}", redirect.Redirect(log, storage))

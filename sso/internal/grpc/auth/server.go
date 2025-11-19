@@ -17,6 +17,7 @@ type Auth interface {
 	Register(ctx context.Context, email string, password string) (userID int64, err error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
 	RefreshToken(ctx context.Context, rToken string) (string, string, error)
+	Logout(ctx context.Context, token string) (string, error)
 }
 
 type serverAPI struct {
@@ -31,28 +32,6 @@ func Register(gRPC *grpc.Server, auth Auth) {
 const (
 	emptyValue = 0
 )
-
-func (s *serverAPI) Login(
-	ctx context.Context,
-	req *ssov1.LoginRequest,
-) (*ssov1.LoginResponse, error) {
-
-	if err := validateLogin(req); err != nil {
-		return nil, err
-	}
-	token, rToken, err := s.auth.Login(ctx, req.GetEmail(), req.GetPassword(), int(req.GetAppId()))
-	if err != nil {
-		if errors.Is(err, auth.ErrInvalidCredentials) {
-			return nil, status.Error(codes.InvalidArgument, "invalid email or password")
-		}
-		return nil, status.Error(codes.Internal, "internal error")
-	}
-
-	return &ssov1.LoginResponse{
-		Token:        token,
-		RefreshToken: rToken,
-	}, nil
-}
 
 func (s *serverAPI) Register(
 	ctx context.Context,
@@ -73,6 +52,28 @@ func (s *serverAPI) Register(
 
 	return &ssov1.RegisterResponse{
 		UserId: userID,
+	}, nil
+}
+
+func (s *serverAPI) Login(
+	ctx context.Context,
+	req *ssov1.LoginRequest,
+) (*ssov1.LoginResponse, error) {
+
+	if err := validateLogin(req); err != nil {
+		return nil, err
+	}
+	token, rToken, err := s.auth.Login(ctx, req.GetEmail(), req.GetPassword(), int(req.GetAppId()))
+	if err != nil {
+		if errors.Is(err, auth.ErrInvalidCredentials) {
+			return nil, status.Error(codes.InvalidArgument, "invalid email or password")
+		}
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+
+	return &ssov1.LoginResponse{
+		Token:        token,
+		RefreshToken: rToken,
 	}, nil
 }
 
@@ -113,6 +114,24 @@ func (s *serverAPI) IsAdmin(
 
 	return &ssov1.IsAdminResponse{
 		IsAdmin: isAdmin,
+	}, nil
+}
+
+func (s *serverAPI) Logout(
+	ctx context.Context,
+	req *ssov1.LogoutRequest,
+) (*ssov1.LogoutResponse, error) {
+	if req.GetToken() == "" {
+		return nil, status.Error(codes.Internal, "unauthorized")
+	}
+
+	isLogout, err := s.auth.Logout(ctx, req.GetToken())
+	if err != nil {
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+
+	return &ssov1.LogoutResponse{
+		Logout: isLogout,
 	}, nil
 }
 

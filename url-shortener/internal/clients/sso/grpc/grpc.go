@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -232,12 +231,10 @@ func (c *Client) Refresh(_ context.Context, log *slog.Logger) http.HandlerFunc {
 			slog.String("request_id", middleware.GetReqID(ctx)),
 		)
 
-		authHeader := r.Header.Get("Authorization")
-
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		token := r.Header.Get("Authorization")
 
 		response, err := c.api.Refresh(ctx, &ssov1.RefreshRequest{
-			RefreshToken: tokenString,
+			RefreshToken: token,
 		})
 		if err != nil {
 			st, ok := status.FromError(err)
@@ -247,12 +244,7 @@ func (c *Client) Refresh(_ context.Context, log *slog.Logger) http.HandlerFunc {
 				return
 			}
 
-			var code int
-
-			switch st.Code() {
-			case codes.Internal:
-				code = http.StatusInternalServerError
-			}
+			code := http.StatusInternalServerError
 
 			log.Error("gRPC Refresh failed", slog.String("grpc_code", st.Code().String()), sl.Err(err))
 			resp.NewJSON(w, r, code, resp.Error(st.Message()))
@@ -264,5 +256,42 @@ func (c *Client) Refresh(_ context.Context, log *slog.Logger) http.HandlerFunc {
 			RToken: response.RefreshToken,
 		})
 		return
+	}
+}
+
+func (c *Client) Logout(_ context.Context, log *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "url-shortener.internal.clients.sso.grpc.Refresh"
+
+		ctx := r.Context()
+
+		log = log.With(
+			slog.String("op", op),
+			slog.String("request_id", middleware.GetReqID(ctx)),
+		)
+
+		token := r.Header.Get("Authorization")
+
+		response, err := c.api.Logout(ctx, &ssov1.LogoutRequest{
+			Token: token,
+		})
+		if err != nil {
+			st, ok := status.FromError(err)
+			if !ok {
+				log.Error("gRPC Refresh failed", slog.String("error", err.Error()))
+				resp.NewJSON(w, r, http.StatusUnauthorized, resp.Error("refresh failed"))
+				return
+			}
+
+			code := http.StatusInternalServerError
+
+			log.Error("gRPC Refresh failed", slog.String("grpc_code", st.Code().String()), sl.Err(err))
+			resp.NewJSON(w, r, code, resp.Error(st.Message()))
+			return
+		}
+
+		resp.NewJSON(w, r, http.StatusOK, &ssov1.LogoutResponse{
+			Logout: response.Logout,
+		})
 	}
 }
