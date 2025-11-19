@@ -8,9 +8,9 @@ import (
 	grpcapp "github.com/lostmyescape/link-shortener/sso/internal/app/grpc"
 	"github.com/lostmyescape/link-shortener/sso/internal/config"
 	"github.com/lostmyescape/link-shortener/sso/internal/lib/logger/sl"
+	"github.com/lostmyescape/link-shortener/sso/internal/lib/tokenstore"
 	"github.com/lostmyescape/link-shortener/sso/internal/services/auth"
 	"github.com/lostmyescape/link-shortener/sso/internal/storage/postgres"
-	"github.com/lostmyescape/link-shortener/sso/pkg/tokenstore"
 )
 
 type App struct {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -40,12 +41,14 @@ func NewToken(user models.User, app models.App, duration time.Duration) (string,
 	return tokenString, err
 }
 
-func ParseToken(refreshToken, secret string) (models.User, error) {
-	if refreshToken == "" {
+func ParseToken(token, secret string) (models.User, error) {
+	tokenString := strings.TrimPrefix(token, "Bearer ")
+
+	if tokenString == "" {
 		return models.User{}, ErrMissAuthHeader
 	}
 
-	claims, err := validToken(refreshToken, secret)
+	claims, err := validToken(tokenString, secret)
 	if err != nil {
 		return models.User{}, fmt.Errorf("failed to parse token: %w", err)
 	}

@@ -158,7 +158,6 @@ func (a *Auth) RefreshToken(
 
 	log := a.log.With(
 		slog.String("op", op),
-		slog.String("refreshToken", refreshToken),
 	)
 
 	app, err := a.appProvider.App(ctx, 1)
@@ -187,25 +186,31 @@ func (a *Auth) RefreshToken(
 	}
 
 	// delete the old token
-	_ = a.tokenStoreProvider.DeleteToken(ctx, user.ID)
+	err = a.tokenStoreProvider.DeleteToken(ctx, user.ID)
+	if err != nil {
+		a.log.Error("failed to delete token", sl.Err(err))
+		return "", "", fmt.Errorf("%s: %w", op, err)
+	}
 
 	log.Info("old token deleted")
 
 	token, err := jwt.NewToken(user, app, a.tokenTTL)
 	if err != nil {
 		a.log.Error("failed to generate token", sl.Err(err))
-
 		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	rToken, err := jwt.NewToken(user, app, a.rTokenTTL)
 	if err != nil {
 		a.log.Error("failed to generate rToken", sl.Err(err))
-
 		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	_ = a.tokenStoreProvider.SaveToken(ctx, user.ID, rToken, a.rTokenTTL)
+	err = a.tokenStoreProvider.SaveToken(ctx, user.ID, rToken, a.rTokenTTL)
+	if err != nil {
+		a.log.Error("failed to save token", sl.Err(err))
+		return "", "", fmt.Errorf("%s: %w", op, err)
+	}
 
 	log.Info("tokens successfully generated")
 
@@ -273,4 +278,35 @@ func (a *Auth) IsAdmin(ctx context.Context, userID int64) (bool, error) {
 	log.Info("checking if user is admin", slog.Bool("is_admin", isAdmin))
 
 	return isAdmin, nil
+}
+
+func (a *Auth) Logout(ctx context.Context, token string) (string, error) {
+	const op = "sso.internal.services.auth.Logout"
+
+	log := a.log.With(
+		slog.String("op", op),
+	)
+
+	log.Info("user logout attempt...")
+
+	app, err := a.appProvider.App(ctx, 1)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	user, err := jwt.ParseToken(token, app.Secret)
+	if err != nil {
+		a.log.Error("failed to parse token", sl.Err(err))
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	err = a.tokenStoreProvider.DeleteToken(ctx, user.ID)
+	if err != nil {
+		a.log.Error("failed to delete token")
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("refresh token was deleted")
+
+	return "successful logout", nil
 }
