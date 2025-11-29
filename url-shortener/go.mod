@@ -13,6 +13,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/lib/pq v1.10.9
+	github.com/lostmyescape/link-shortener/common v0.0.0-20251129065718-fdec01dbdd97
 	github.com/lostmyescape/protos v0.0.7
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.76.0
@@ -31,6 +32,7 @@ require (
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/hpcloud/tail v1.0.0 // indirect
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/klauspost/compress v1.15.15 // indirect
@@ -40,8 +42,10 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
+	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/sanity-io/litter v1.5.8 // indirect
+	github.com/segmentio/kafka-go v0.4.49 // indirect
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
@@ -59,6 +63,8 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251111163417-95abcf5c77ba // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
+	gopkg.in/fsnotify.v1 v1.4.7 // indirect
+	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	moul.io/http2curl/v2 v2.3.0 // indirect
 	olympos.io/encoding/edn v0.0.0-20201019073823-d3554ca0b0a3 // indirect

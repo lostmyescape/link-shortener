@@ -9,6 +9,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.19.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/lib/pq v1.10.9
+	github.com/lostmyescape/link-shortener/common v0.0.0-20251129065718-fdec01dbdd97
 	github.com/lostmyescape/protos v0.0.7
 	github.com/redis/go-redis/v9 v9.16.0
 	github.com/stretchr/testify v1.11.1
@@ -21,10 +22,13 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
+	github.com/fatih/color v1.18.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/klauspost/compress v1.15.11 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pierrec/lz4/v4 v4.1.16 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/segmentio/kafka-go v0.4.49 // indirect
