@@ -16,15 +16,16 @@ type Consumer struct {
 	log *slog.Logger
 }
 
-func NewConsumer(brokers []string, groupID, topic string, log *slog.Logger) *Consumer {
+func NewConsumer(brokers, topics []string, groupID string, log *slog.Logger) *Consumer {
 
 	return &Consumer{
 		r: kafka.NewReader(kafka.ReaderConfig{
-			Brokers:  brokers,
-			GroupID:  groupID,
-			Topic:    topic,
-			MinBytes: 10e3,
-			MaxBytes: 10e6,
+			Brokers:     brokers,
+			GroupID:     groupID,
+			Topic:       "",
+			GroupTopics: topics,
+			MinBytes:    10e3,
+			MaxBytes:    10e6,
 		}),
 		log: log,
 	}
@@ -39,11 +40,21 @@ func (c *Consumer) Start(ctx context.Context) {
 					c.log.Info("consumer stopped")
 					return
 				}
-				c.log.Error("consumer error", sl.Err(err))
+				c.log.Error("kafka read error", sl.Err(err))
 				continue
 			}
 
 			c.log.Info("message from kafka: ", string(msg.Value))
+
+			switch msg.Topic {
+			case "user-events":
+				c.log.Info("topic: user-events, message from kafka:", string(msg.Value))
+			case "link-events":
+				c.log.Info("topic: link-events, message from kafka:", string(msg.Value))
+			default:
+				c.log.Warn("unknown topic", slog.String("topic", msg.Topic))
+			}
 		}
+
 	}()
 }

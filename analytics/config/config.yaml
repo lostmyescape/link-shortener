@@ -3,5 +3,6 @@ env: "local"
 kafka:
   brokers:
   - "kafka:9092"
-  topic: "user-events"
+  topic_user: "user-events"
+  topic_link: "link-events"
   group_id: "analytics-group"

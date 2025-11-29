@@ -12,9 +12,10 @@ type Config struct {
 }
 
 type KafkaStorage struct {
-	Brokers []string `yaml:"brokers"`
-	Topic   string   `yaml:"topic"`
-	GroupID string   `yaml:"group_id"`
+	Brokers   []string `yaml:"brokers"`
+	TopicUser string   `yaml:"topic_user"`
+	TopicLink string   `yaml:"topic_link"`
+	GroupID   string   `yaml:"group_id"`
 }
 
 func MustLoad() *Config {
