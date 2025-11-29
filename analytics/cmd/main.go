@@ -32,13 +32,15 @@ func main() {
 		slog.String("env", cfg.Env),
 	)
 
-	kafkaConsumer := consumer.NewConsumer(
+	topics := []string{cfg.Kafka.TopicUser, cfg.Kafka.TopicLink}
+
+	eventsConsumer := consumer.NewConsumer(
 		cfg.Kafka.Brokers,
+		topics,
 		cfg.Kafka.GroupID,
-		cfg.Kafka.Topic,
 		log,
 	)
-	kafkaConsumer.Start(ctx)
+	eventsConsumer.Start(ctx)
 
 	<-ctx.Done()
 	log.Info("shutting down")
