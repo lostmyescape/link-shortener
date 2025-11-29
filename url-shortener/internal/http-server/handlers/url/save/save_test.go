@@ -8,8 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/lostmyescape/link-shortener/common/kafka/producer"
+	"github.com/lostmyescape/link-shortener/common/logger/slogdiscard"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/url/save/mocks"
-	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/logger/handlers/slogdiscard"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/storage"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -90,8 +91,10 @@ func TestSaveHandler(t *testing.T) {
 					Once()                          // метод вызывается только один раз
 			}
 
+			producerProvider := producer.NewProducer([]string{"kafka:9092"}, "link-events")
+
 			// создание хендлера: принимает заглушку и мок
-			handler := New(slogdiscard.NewDiscardLogger(), urlSaverMock)
+			handler := New(slogdiscard.NewDiscardLogger(), urlSaverMock, producerProvider)
 
 			// тело запроса в JSON
 			bodyBytes, err := json.Marshal(map[string]string{

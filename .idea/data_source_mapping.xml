@@ -3,6 +3,7 @@
   <component name="DataSourcePerFileMappings">
     <file url="file://$PROJECT_DIR$/sso/migrations/1_init.down.sql" value="7bb3f37e-3e2b-4ab5-b48f-7af4fafc4aeb" />
     <file url="file://$PROJECT_DIR$/sso/migrations/1_init.up.sql" value="7bb3f37e-3e2b-4ab5-b48f-7af4fafc4aeb" />
+    <file url="file://$PROJECT_DIR$/sso/migrations/2_add_is_admin_column.down.sql" value="a167cf5c-e5b0-4c63-b753-fe55816c011e" />
     <file url="file://$PROJECT_DIR$/sso/migrations/2_add_is_admin_column.up.sql" value="a167cf5c-e5b0-4c63-b753-fe55816c011e" />
   </component>
 </project>

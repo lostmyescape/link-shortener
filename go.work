@@ -4,4 +4,6 @@ use (
 	./protos
 	./sso
 	./url-shortener
+	./analytics
+	./common
 )

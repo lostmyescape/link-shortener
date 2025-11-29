@@ -6,9 +6,10 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/lostmyescape/link-shortener/common/kafka/producer"
+	"github.com/lostmyescape/link-shortener/common/logger/slogpretty"
 	"github.com/lostmyescape/link-shortener/sso/internal/app"
 	"github.com/lostmyescape/link-shortener/sso/internal/config"
-	"github.com/lostmyescape/link-shortener/sso/internal/lib/logger/handlers/slogpretty"
 	"github.com/lostmyescape/link-shortener/sso/internal/lib/tokenstore"
 	redisClient "github.com/lostmyescape/link-shortener/sso/internal/storage/redis"
 	"github.com/redis/go-redis/v9"
@@ -40,7 +41,18 @@ func main() {
 
 	tokenStore := tokenstore.NewRedisStore(rdb)
 
-	application := app.New(log, cfg.GRPC.Port, cfg, cfg.TokenTTL, cfg.RTokenTTL, tokenStore)
+	producerProvider := producer.NewProducer(cfg.Kafka.Brokers, cfg.Kafka.Topic)
+
+	application := app.New(
+		log,
+		cfg.GRPC.Port,
+		cfg,
+		cfg.TokenTTL,
+		cfg.RTokenTTL,
+		tokenStore,
+		producerProvider,
+		cfg.Kafka.Ip,
+	)
 
 	go application.GRPCSrv.MustRun()
 

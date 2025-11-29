@@ -14,6 +14,7 @@ type Config struct {
 	GRPC      GRPCConfig    `yaml:"grpc"`
 	Storage   Storage
 	Redis     RedisStorage
+	Kafka     KafkaStorage
 }
 
 type GRPCConfig struct {
@@ -36,11 +37,16 @@ type RedisStorage struct {
 	DB       int    `yaml:"db"`
 }
 
+type KafkaStorage struct {
+	Brokers []string `yaml:"brokers"`
+	Topic   string   `yaml:"topic"`
+	Ip      string   `yaml:"ip"`
+}
+
 func MustLoad() *Config {
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
 		configPath = "config/config.yaml"
-		//configPath = "../../config/config.yaml"
 	}
 
 	return MustLoadByPath(configPath)
@@ -48,13 +54,13 @@ func MustLoad() *Config {
 
 func MustLoadByPath(configPath string) *Config {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		panic("config file does not exist" + configPath)
+		panic("config file does not exist: " + configPath)
 	}
 
 	var cfg Config
 
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-		panic("cannot read config" + err.Error())
+		panic("cannot read config: " + err.Error())
 	}
 
 	return &cfg

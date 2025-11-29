@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"time"
 
+	"github.com/lostmyescape/link-shortener/common/kafka/events"
+	"github.com/lostmyescape/link-shortener/common/logger/sl"
 	"github.com/lostmyescape/link-shortener/sso/internal/domain/models"
-	"github.com/lostmyescape/link-shortener/sso/internal/lib/logger/sl"
 	"github.com/lostmyescape/link-shortener/sso/internal/storage"
 	"github.com/lostmyescape/link-shortener/sso/pkg/jwt"
 	"github.com/redis/go-redis/v9"
@@ -23,6 +25,8 @@ type Auth struct {
 	tokenTTL           time.Duration
 	rTokenTTL          time.Duration
 	tokenStoreProvider TokenStoreProvider
+	producerProvider   ProducerProvider
+	ip                 string
 }
 
 type TokenStoreProvider interface {
@@ -48,6 +52,11 @@ type AppProvider interface {
 	App(ctx context.Context, appID int) (models.App, error)
 }
 
+type ProducerProvider interface {
+	Publish(ctx context.Context, key string, value interface{}) error
+	Close() error
+}
+
 var (
 	ErrInvalidCredentials  = errors.New("invalid credentials")
 	ErrInvalidAppId        = errors.New("invalid app ID")
@@ -65,6 +74,8 @@ func New(
 	tokenTTL time.Duration,
 	rTokenTTL time.Duration,
 	tokenStoreProvider TokenStoreProvider,
+	producerProvider ProducerProvider,
+	ip string,
 ) *Auth {
 	return &Auth{
 		log:                log,
@@ -74,6 +85,8 @@ func New(
 		tokenTTL:           tokenTTL,
 		rTokenTTL:          rTokenTTL,
 		tokenStoreProvider: tokenStoreProvider,
+		producerProvider:   producerProvider,
+		ip:                 ip,
 	}
 }
 
@@ -146,6 +159,18 @@ func (a *Auth) Login(
 	}
 
 	log.Info("tokens successfully generated")
+
+	ev := map[string]interface{}{
+		"type":      events.EventUserLoggedIn,
+		"timestamp": time.Now().UTC(),
+		"user_id":   user.ID,
+		"ip":        a.ip,
+	}
+
+	err = a.producerProvider.Publish(ctx, strconv.FormatInt(user.ID, 10), ev)
+	if err != nil {
+		a.log.Error("failed to send message to Kafka", sl.Err(err))
+	}
 
 	return token, rToken, nil
 }
@@ -249,6 +274,18 @@ func (a *Auth) Register(
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
+	ev := map[string]interface{}{
+		"type":      events.EventUserRegistered,
+		"timestamp": time.Now().UTC(),
+		"user_id":   id,
+		"ip":        a.ip,
+	}
+
+	err = a.producerProvider.Publish(ctx, strconv.FormatInt(id, 10), ev)
+	if err != nil {
+		a.log.Error("failed to send message to Kafka", sl.Err(err))
+	}
+
 	log.Info("user registered")
 
 	return id, nil
@@ -304,6 +341,18 @@ func (a *Auth) Logout(ctx context.Context, token string) (string, error) {
 	if err != nil {
 		a.log.Error("failed to delete token")
 		return "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	ev := map[string]interface{}{
+		"type":      events.EventUserLoggedOut,
+		"timestamp": time.Now().UTC(),
+		"user_id":   user.ID,
+		"ip":        a.ip,
+	}
+
+	err = a.producerProvider.Publish(ctx, strconv.FormatInt(user.ID, 10), ev)
+	if err != nil {
+		a.log.Error("failed to send message to Kafka", sl.Err(err))
 	}
 
 	log.Info("refresh token was deleted")

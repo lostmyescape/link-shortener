@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log"
 	"os"
 	"time"
 
@@ -15,6 +14,7 @@ type Config struct {
 	Clients      ClientsConfig `yaml:"clients"`
 	RedisStorage RedisStorage  `yaml:"redis"`
 	AppSecret    string        `yaml:"app_secret" env:"APP_SECRET"`
+	Kafka        KafkaStorage
 	Storage      struct {
 		Host     string `yaml:"host"`
 		Port     int    `yaml:"port"`
@@ -51,6 +51,12 @@ type RedisStorage struct {
 	DB       int    `yaml:"db"`
 }
 
+type KafkaStorage struct {
+	Brokers []string `yaml:"brokers"`
+	Topic   string   `yaml:"topic"`
+	Ip      string   `yaml:"ip"`
+}
+
 func (c *Config) GetRedisAddr() string {
 	return c.RedisStorage.Addr
 }
@@ -66,13 +72,13 @@ func LoadConfig() *Config {
 	}
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		log.Fatalf("config file does not exists: %s", configPath)
+		panic("config does not exists: " + configPath)
 	}
 
 	var cfg Config
 
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-		log.Fatalf("cannot read config.yaml: %v", err)
+		panic("cannot read config: " + err.Error())
 	}
 
 	return &cfg
