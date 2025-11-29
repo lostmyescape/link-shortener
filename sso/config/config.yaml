@@ -18,3 +18,8 @@ redis:
   password: "asdfg"
   DB: 0
 
+kafka:
+  brokers:
+  - "kafka:9092"
+  topic: "user-events"
+  ip: "kafka:9092"

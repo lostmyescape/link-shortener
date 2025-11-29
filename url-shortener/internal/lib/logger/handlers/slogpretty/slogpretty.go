@@ -6,8 +6,9 @@ import (
 	"io"
 	stdLog "log"
 
-	"github.com/fatih/color"
 	"log/slog"
+
+	"github.com/fatih/color"
 )
 
 type PrettyHandlerOptions struct {
@@ -39,7 +40,7 @@ func (h *PrettyHandler) Handle(_ context.Context, r slog.Record) error {
 	case slog.LevelDebug:
 		level = color.MagentaString(level)
 	case slog.LevelInfo:
-		level = color.BlueString(level)
+		level = color.WhiteString(level)
 	case slog.LevelWarn:
 		level = color.YellowString(level)
 	case slog.LevelError:

@@ -35,6 +35,8 @@ services:
       DB_PASSWORD: asdfg
       DB_NAME: sso_db
       REDIS_ADDR: redis:6379
+    tty: true
+    stdin_open: true
     ports:
       - "44045:44045"
     volumes:
@@ -64,6 +66,58 @@ services:
       --requirepass "asdfg"
     ports:
       - "6379:6379"
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: yes
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+    logging:
+      driver: "none"  # Логи полностью отключены
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    environment:
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      # Настройки логирования через переменные
+      KAFKA_LOG4J_ROOT_LOGLEVEL: "WARN"
+      KAFKA_LOG4J_LOGGERS: "kafka=WARN,org.apache.kafka=WARN,kafka.controller=WARN,kafka.producer.async.DefaultEventHandler=WARN,kafka.request.logger=WARN,kafka.log.LogCleaner=WARN,state.change.logger=WARN,kafka.authorizer.logger=WARN,kafka.network.RequestChannel$=WARN"
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: [ "CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "kafka:9092" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:4.0.1
+    environment:
+      - KAFKA_BROKERCONNECT=kafka:9092
+      - LOGGING_LEVEL_ROOT=ERROR
+    ports:
+      - "9000:9000"
+    depends_on:
+      - kafka
+
+  analytics:
+    build: ./analytics
+    depends_on:
+      - kafka
+    environment:
+      CONFIG_PATH: "/config.yaml"
+    tty: true
+    stdin_open: true
+    volumes:
+      - ./analytics/config:/app/config
 
 
 volumes:

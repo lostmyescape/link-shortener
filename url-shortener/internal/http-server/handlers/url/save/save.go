@@ -1,13 +1,18 @@
 package save
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
+	"github.com/lostmyescape/link-shortener/common/kafka/events"
+	"github.com/lostmyescape/link-shortener/common/kafka/producer"
 	resp "github.com/lostmyescape/link-shortener/url-shortener/internal/lib/api/response"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/jwt/mdjwt"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/logger/sl"
@@ -30,18 +35,25 @@ type URLSaver interface {
 	SaveURL(urlToSave string, alias string) (int64, error)
 }
 
+type ProducerProvider interface {
+	Publish(ctx context.Context, key string, value interface{}) error
+	Close() error
+}
+
 const aliasLength = 6
 
-func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
+func New(log *slog.Logger, urlSaver URLSaver, producerProvider *producer.Producer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.url.save.New"
+
+		ctx := context.Background()
 
 		log = log.With(
 			slog.String("op", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
 
-		_, ok := mdjwt.GetUserID(r.Context())
+		userID, ok := mdjwt.GetUserID(r.Context())
 
 		if !ok {
 			resp.NewJSON(w, r, http.StatusUnauthorized, resp.Error("unauthorized"))
@@ -96,6 +108,18 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 				return
 			}
 
+		}
+
+		ev := map[string]interface{}{
+			"type":      events.EventLinkSaved,
+			"timestamp": time.Now().UTC(),
+			"user_id":   userID,
+			"ip":        "kafka:9092",
+		}
+
+		err = producerProvider.Publish(ctx, strconv.FormatInt(int64(userID), 10), ev)
+		if err != nil {
+			log.Error("failed to send message to Kafka", sl.Err(err))
 		}
 		log.Info("url added", slog.Int64("id", id))
 		resp.RespOk(w, r, alias)

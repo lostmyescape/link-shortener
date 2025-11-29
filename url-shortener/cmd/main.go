@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/lostmyescape/link-shortener/common/kafka/producer"
 	ssogrpc "github.com/lostmyescape/link-shortener/url-shortener/internal/clients/sso/grpc"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/config"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/http-server/handlers/deleteURL"
@@ -29,9 +30,7 @@ const (
 )
 
 func main() {
-
 	cfg := config.LoadConfig()
-
 	log := setupLogger(cfg.Env)
 
 	log.Info(
@@ -40,7 +39,7 @@ func main() {
 		slog.String("version", "123"),
 	)
 
-	log.Debug("debug messages are enabled")
+	producerProvider := producer.NewProducer(cfg.Kafka.Brokers, cfg.Kafka.Topic)
 
 	ssoClient, err := ssogrpc.New(
 		log,
@@ -80,8 +79,8 @@ func main() {
 
 	router.Route("/url", func(r chi.Router) {
 		r.Use(jwtMiddleware.JWTAuthMiddleware)
-		r.Post("/", save.New(log, storage))
-		r.Delete("/{alias}", deleteURL.New(log, storage))
+		r.Post("/", save.New(log, storage, producerProvider))
+		r.Delete("/{alias}", deleteURL.New(log, storage, producerProvider))
 	})
 
 	router.Route("/logout", func(r chi.Router) {

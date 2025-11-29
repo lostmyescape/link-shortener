@@ -25,3 +25,9 @@ http_server:
 redis:
   addr: "redis:6379"
   password: "asdfg"
+
+kafka:
+  brokers:
+    - "kafka:9092"
+  topic: "link-events"
+  ip: "kafka:9092"
