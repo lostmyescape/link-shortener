@@ -1,29 +1,35 @@
-# 1. Базовый образ с Go
-FROM golang:1.25 AS builder
+# -------- STAGE 1: Build --------
+FROM golang:1.25-alpine AS builder
 
-# 2. Рабочая директория
 WORKDIR /app
 
-# 3. Копируем файлы зависимостей
-COPY go.mod go.sum ./
-RUN go mod download
+# Копируем go.work и go.mod всех модулей
+COPY go.work ./
+COPY sso/go.mod sso/go.sum ./sso/
+COPY url-shortener/go.mod url-shortener/go.sum ./url-shortener/
+COPY analytics/go.mod analytics/go.sum ./analytics/
+COPY common/go.mod common/go.sum ./common/
 
-# 4. Копируем весь исходный код
+# Загружаем зависимости
+RUN go work sync && go mod download
+
+# Копируем проект
 COPY . .
 
-# 5. Собираем бинарник
+# Собираем бинарь
+WORKDIR /app/url-shortener
 RUN go build -o url-shortener ./cmd/main.go
 
-# 6. Минимальный образ для запуска
-FROM debian:bookworm-slim
+# -------- STAGE 2: Run --------
+FROM alpine:latest
 WORKDIR /app
 
-# 7. Копируем бинарник и конфиги
-COPY --from=builder /app/url-shortener .
-COPY config/config.yaml ./config/config.yaml
+# Копируем бинарь
+COPY --from=builder /app/url-shortener/url-shortener ./url-shortener
 
-# 8. Порт для HTTP
-EXPOSE 8080
+# Копируем конфиги
+COPY url-shortener/config ./config
 
-# 9. Запускаем приложение
+EXPOSE 8090
+
 CMD ["./url-shortener"]

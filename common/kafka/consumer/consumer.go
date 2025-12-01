@@ -44,8 +44,6 @@ func (c *Consumer) Start(ctx context.Context) {
 				continue
 			}
 
-			c.log.Info("message from kafka: ", string(msg.Value))
-
 			switch msg.Topic {
 			case "user-events":
 				c.log.Info("topic: user-events, message from kafka:", string(msg.Value))
