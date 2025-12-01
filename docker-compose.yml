@@ -24,7 +24,9 @@ services:
       - short_db_data:/var/lib/postgresql/data
 
   auth:
-    build: ./sso
+    build:
+      context: .
+      dockerfile: sso/Dockerfile
     depends_on:
       - auth-db
       - redis
@@ -43,7 +45,9 @@ services:
       - ./sso/config:/app/config
 
   shortener:
-    build: ./url-shortener
+    build:
+      context: .
+      dockerfile: url-shortener/Dockerfile
     depends_on:
       - shortener-db
       - auth
@@ -54,6 +58,8 @@ services:
       DB_PASSWORD: asdfg
       DB_NAME: shortener_db
       AUTH_SERVICE_URL: auth:8080
+    tty: true
+    stdin_open: true
     ports:
       - "8082:8080"
     volumes:
@@ -72,10 +78,12 @@ services:
     environment:
       ALLOW_ANONYMOUS_LOGIN: yes
       ZOOKEEPER_CLIENT_PORT: 2181
+    tty: true
+    stdin_open: true
     ports:
       - "2181:2181"
     logging:
-      driver: "none"  # Логи полностью отключены
+      driver: "none"
 
   kafka:
     image: confluentinc/cp-kafka:7.6.0
@@ -84,7 +92,6 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      # Настройки логирования через переменные
       KAFKA_LOG4J_ROOT_LOGLEVEL: "WARN"
       KAFKA_LOG4J_LOGGERS: "kafka=WARN,org.apache.kafka=WARN,kafka.controller=WARN,kafka.producer.async.DefaultEventHandler=WARN,kafka.request.logger=WARN,kafka.log.LogCleaner=WARN,state.change.logger=WARN,kafka.authorizer.logger=WARN,kafka.network.RequestChannel$=WARN"
     ports:
@@ -97,6 +104,8 @@ services:
       timeout: 10s
       retries: 10
       start_period: 40s
+    logging:
+      driver: "none"
 
   kafdrop:
     image: obsidiandynamics/kafdrop:4.0.1
@@ -107,9 +116,13 @@ services:
       - "9000:9000"
     depends_on:
       - kafka
+    logging:
+      driver : "none"
 
   analytics:
-    build: ./analytics
+    build:
+      context: .
+      dockerfile: analytics/Dockerfile
     depends_on:
       - kafka
     environment:
@@ -119,7 +132,28 @@ services:
     volumes:
       - ./analytics/config:/app/config
 
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.10
+    container_name: clickhouse
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - ./infra/clickhouse/config:/etc/clickhouse-server
+      - clickhouse_data:/var/lib/clickhouse
+
+  clickhouse-client:
+    image: clickhouse/clickhouse-client:23.10
+    depends_on:
+      - clickhouse
+    entrypoint: [ "tail", "-f", "/dev/null" ]
+    tty: true
 
 volumes:
   auth_db_data:
   short_db_data:
+  clickhouse_data:

@@ -1,21 +1,34 @@
-FROM golang:1.25 AS builder
+# -------- STAGE 1: Build --------
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
-RUN go mod download
+# Копируем только go.work и go.mod файлов — для лучшего кеша
+COPY go.work ./
+COPY sso/go.mod sso/go.sum ./sso/
+COPY url-shortener/go.mod url-shortener/go.sum ./url-shortener/
+COPY analytics/go.mod analytics/go.sum ./analytics/
+COPY common/go.mod common/go.sum ./common/
 
+# Загружаем зависимости
+RUN go work sync && go mod download
+
+# Теперь копируем весь проект
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o analytics ./cmd/main.go
+# Собираем binary
+WORKDIR /app/analytics
+RUN go build -o analytics ./cmd/main.go
 
-FROM debian:bookworm-slim
+# -------- STAGE 2: Run --------
+FROM alpine:latest
 WORKDIR /app
 
-COPY --from=builder /app/analytics .
-COPY config/config.yaml ./config/config.yaml
+# Копируем бинарь
+COPY --from=builder /app/analytics/analytics ./analytics
 
-RUN chmod +x /app/analytics
+# Копируем конфиг
+COPY analytics/config ./config
 
 EXPOSE 8080
 
