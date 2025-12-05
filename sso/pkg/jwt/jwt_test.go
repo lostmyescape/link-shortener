@@ -84,3 +84,7 @@ func TestNewToken_EmptySecret(t *testing.T) {
 		t.Error("expected error due to empty secret, got nil")
 	}
 }
+
+func TestParseToken(t *testing.T) {
+
+}

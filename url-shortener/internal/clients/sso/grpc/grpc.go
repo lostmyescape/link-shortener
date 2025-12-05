@@ -29,6 +29,11 @@ type RegisterRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
+
+type RegisterResponse struct {
+	Message string `json:"message"`
+	UserID  int64  `json:"user_id"`
+}
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
@@ -159,7 +164,11 @@ func (c *Client) Register(_ context.Context, log *slog.Logger) http.HandlerFunc 
 
 		log.Info("user registered", slog.Any("grpc response:", respGRPC))
 
-		resp.NewJSON(w, r, http.StatusOK, "user successfully registered")
+		resp.NewJSON(w, r, http.StatusOK,
+			RegisterResponse{
+				Message: "successful registration!",
+				UserID:  respGRPC.UserId,
+			})
 		return
 	}
 }

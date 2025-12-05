@@ -10,8 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/lostmyescape/link-shortener/common/kafka/events"
-	"github.com/lostmyescape/link-shortener/common/kafka/producer"
+	"github.com/lostmyescape/link-shortener/common/kafka"
 	resp "github.com/lostmyescape/link-shortener/url-shortener/internal/lib/api/response"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/jwt/mdjwt"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/logger/sl"
@@ -22,7 +21,7 @@ type URLDeleter interface {
 	DeleteURL(alias string) error
 }
 
-func New(log *slog.Logger, delete URLDeleter, producer *producer.Producer) http.HandlerFunc {
+func New(log *slog.Logger, delete URLDeleter, producer *kafka.Producer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.deleteURL.deleteURL"
 
@@ -50,7 +49,7 @@ func New(log *slog.Logger, delete URLDeleter, producer *producer.Producer) http.
 		}
 
 		ev := map[string]interface{}{
-			"type":      events.EventLinkDeleted,
+			"type":      kafka.EventLinkDeleted,
 			"timestamp": time.Now().UTC(),
 			"user_id":   int64(userID),
 			"ip":        "kafka:9092",

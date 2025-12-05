@@ -1,4 +1,4 @@
-package events
+package kafka
 
 const (
 	EventUserRegistered = "user.registered"

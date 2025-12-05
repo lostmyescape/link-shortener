@@ -6,3 +6,9 @@ kafka:
   topic_user: "user-events"
   topic_link: "link-events"
   group_id: "analytics-group"
+
+clickhouse:
+  host: "clickhouse:8123"
+  database: "default"
+  username: "default"
+  password: "asdfg"

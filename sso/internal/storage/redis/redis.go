@@ -2,13 +2,12 @@ package redis
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/lostmyescape/link-shortener/sso/internal/config"
 	"github.com/redis/go-redis/v9"
 )
 
-func NewClient(cfg *config.Config) (*redis.Client, error) {
+func NewClient(cfg *config.Config) *redis.Client {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     cfg.Redis.Addr,
 		Password: cfg.Redis.Password,
@@ -16,9 +15,8 @@ func NewClient(cfg *config.Config) (*redis.Client, error) {
 	})
 
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
-		fmt.Printf("Failed to connect to Redis: %v", err)
-		return nil, err
+		panic("failed connect to Redis")
 	}
 
-	return rdb, nil
+	return rdb
 }

@@ -17,9 +17,6 @@ func NewRedisStore(rdb *redis.Client) *TokenStore {
 }
 
 func (s *TokenStore) SaveToken(ctx context.Context, userID int64, token string, ttl time.Duration) error {
-	if s.rdb == nil {
-		panic("REDIS CLIENT IS NIL")
-	}
 	key := getKey(userID)
 	return s.rdb.Set(ctx, key, token, ttl).Err()
 }

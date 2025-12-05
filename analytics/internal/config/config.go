@@ -7,8 +7,9 @@ import (
 )
 
 type Config struct {
-	Env   string       `yaml:"env" env-default:"local"`
-	Kafka KafkaStorage `yaml:"kafka"`
+	Env        string            `yaml:"env" env-default:"local"`
+	Kafka      KafkaStorage      `yaml:"kafka"`
+	Clickhouse ClickhouseStorage `yaml:"clickhouse"`
 }
 
 type KafkaStorage struct {
@@ -16,6 +17,13 @@ type KafkaStorage struct {
 	TopicUser string   `yaml:"topic_user"`
 	TopicLink string   `yaml:"topic_link"`
 	GroupID   string   `yaml:"group_id"`
+}
+
+type ClickhouseStorage struct {
+	Host     string `yaml:"host"`
+	Database string `yaml:"database"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
 }
 
 func MustLoad() *Config {

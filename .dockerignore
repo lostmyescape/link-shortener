@@ -1,0 +1,3 @@
+infra/clickhouse/data
+infra/clickhouse/logs
+infra/clickhouse/backups

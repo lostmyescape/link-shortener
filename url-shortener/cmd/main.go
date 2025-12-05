@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/lostmyescape/link-shortener/common/kafka/producer"
+	"github.com/lostmyescape/link-shortener/common/kafka"
 	"github.com/lostmyescape/link-shortener/common/logger/slogpretty"
 	ssogrpc "github.com/lostmyescape/link-shortener/url-shortener/internal/clients/sso/grpc"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/config"
@@ -30,16 +30,14 @@ const (
 )
 
 func main() {
+	ctx := context.Background()
 	cfg := config.LoadConfig()
 	log := setupLogger(cfg.Env)
+	storage := dbstorage.NewStorage(ctx, cfg, log)
 
-	log.Info(
-		"starting url-shortener",
-		slog.String("env", cfg.Env),
-		slog.String("version", "123"),
-	)
+	log.Info("starting url-shortener", slog.Any("env", cfg))
 
-	producerProvider := producer.NewProducer(cfg.Kafka.Brokers, cfg.Kafka.Topic)
+	producerProvider := kafka.NewProducer(cfg.Kafka.Brokers, cfg.Kafka.Topic)
 
 	ssoClient, err := ssogrpc.New(
 		log,
@@ -53,16 +51,10 @@ func main() {
 	}
 	ssoClient.IsAdmin(context.Background(), 1)
 
-	storage, err := dbstorage.NewStorage(cfg)
-	if err != nil {
-		log.Error("DB connection error: %v", sl.Err(err))
-		os.Exit(1)
-	}
-
 	defer func(DB *sql.DB) {
 		err := storage.DB.Close()
 		if err != nil {
-			log.Error("DB close error: %v", err)
+			log.Error("DB close error", sl.Err(err))
 			return
 		}
 	}(storage.DB)

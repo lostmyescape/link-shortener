@@ -1,3 +1,11 @@
+x-infra-logging: &infra-no-logs
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"     # НЕ сохранять логи вообще
+      max-file: "3"
+      mode: "non-blocking"
+
 services:
   auth-db:
     image: postgres:15
@@ -72,6 +80,7 @@ services:
       --requirepass "asdfg"
     ports:
       - "6379:6379"
+    <<: *infra-no-logs
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
@@ -82,8 +91,7 @@ services:
     stdin_open: true
     ports:
       - "2181:2181"
-    logging:
-      driver: "none"
+    <<: *infra-no-logs
 
   kafka:
     image: confluentinc/cp-kafka:7.6.0
@@ -100,12 +108,11 @@ services:
       - zookeeper
     healthcheck:
       test: [ "CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "kafka:9092" ]
-      interval: 10s
+      interval: 5s
       timeout: 10s
       retries: 10
-      start_period: 40s
-    logging:
-      driver: "none"
+      start_period: 20s
+    <<: *infra-no-logs
 
   kafdrop:
     image: obsidiandynamics/kafdrop:4.0.1
@@ -113,11 +120,10 @@ services:
       - KAFKA_BROKERCONNECT=kafka:9092
       - LOGGING_LEVEL_ROOT=ERROR
     ports:
-      - "9000:9000"
+      - "9001:9000"
     depends_on:
       - kafka
-    logging:
-      driver : "none"
+    <<: *infra-no-logs
 
   analytics:
     build:
@@ -125,35 +131,64 @@ services:
       dockerfile: analytics/Dockerfile
     depends_on:
       - kafka
+      - clickhouse
     environment:
       CONFIG_PATH: "/config.yaml"
+      USER_PASS:
     tty: true
     stdin_open: true
     volumes:
       - ./analytics/config:/app/config
 
   clickhouse:
-    image: clickhouse/clickhouse-server:23.10
+    image: clickhouse/clickhouse-server:23.8-alpine
     container_name: clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: asdfg
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      CLICKHOUSE_DEFAULT_HOST: "0.0.0.0"
+      CLICKHOUSE_OPTS: "--listen_host=0.0.0.0"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_log:/var/log/clickhouse-server
+    healthcheck:
+      test: [ "CMD", "clickhouse-client", "--query", "SELECT 1" ]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    cap_add:
+        - SYS_NICE
     ulimits:
       nofile:
         soft: 262144
         hard: 262144
-    ports:
-      - "8123:8123"
-      - "9000:9000"
-    volumes:
-      - ./infra/clickhouse/config:/etc/clickhouse-server
-      - clickhouse_data:/var/lib/clickhouse
+    <<: *infra-no-logs
 
   clickhouse-client:
-    image: clickhouse/clickhouse-client:23.10
+    image: clickhouse/clickhouse-server:23.8-alpine
     depends_on:
       - clickhouse
     entrypoint: [ "tail", "-f", "/dev/null" ]
     tty: true
 
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - clickhouse
+
 volumes:
   auth_db_data:
   short_db_data:
   clickhouse_data:
+  clickhouse_log:

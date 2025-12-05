@@ -6,9 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
+	"time"
 
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
+	"github.com/lostmyescape/link-shortener/common/logger/sl"
 	"github.com/lostmyescape/link-shortener/sso/internal/config"
 	"github.com/lostmyescape/link-shortener/sso/internal/domain/models"
 	"github.com/lostmyescape/link-shortener/sso/internal/storage"
@@ -18,7 +21,29 @@ type Storage struct {
 	DB *sql.DB
 }
 
-func NewStorage(cfg *config.Config) (*Storage, error) {
+func NewStorage(ctx context.Context, cfg *config.Config, log *slog.Logger) *Storage {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
+	defer cancel()
+
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			panic("timeout waiting for postgresql")
+		case <-ticker.C:
+			conn, err := connect(cfg)
+			if err == nil {
+				log.Info("postgresql connected successfully")
+				return conn
+			}
+			log.Error("postgresql not ready, retrying...", sl.Err(err))
+		}
+	}
+}
+
+func connect(cfg *config.Config) (*Storage, error) {
 	dsn := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		cfg.Storage.Host,
@@ -31,14 +56,14 @@ func NewStorage(cfg *config.Config) (*Storage, error) {
 
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
-		return nil, fmt.Errorf("database connection error: %w", err)
+		return nil, fmt.Errorf("postgresql connection error: %w", err)
 	}
 
 	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("connection failed to database: %w", err)
+		return nil, fmt.Errorf("postgresql ping failed: %w", err)
 	}
 
-	log.Println("Successful database connection")
+	log.Println("successful database connection")
 
 	return &Storage{DB: db}, nil
 }
@@ -49,7 +74,7 @@ func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (
 
 	var userID int64
 
-	query := "INSERT INTO users(email, pass_hash) VALUES($1, $2) RETURNING id"
+	query := `INSERT INTO users(email, pass_hash) VALUES($1, $2) RETURNING id`
 
 	err := s.DB.QueryRowContext(ctx, query, email, passHash).Scan(&userID)
 	if err != nil {
@@ -74,7 +99,7 @@ func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
 
 	err := s.DB.QueryRowContext(
 		ctx,
-		"SELECT id, email, pass_hash FROM users WHERE email = $1",
+		`SELECT id, email, pass_hash FROM users WHERE email = $1`,
 		email).
 		Scan(&user.ID, &user.Email, &user.PassHash)
 	if err != nil {
@@ -94,7 +119,7 @@ func (s *Storage) IsAdmin(ctx context.Context, userID int64) (bool, error) {
 
 	err := s.DB.QueryRowContext(
 		ctx,
-		"SELECT is_admin FROM users WHERE id = $1",
+		`SELECT is_admin FROM users WHERE id = $1`,
 		userID).
 		Scan(&isAdmin)
 	if err != nil {
@@ -114,7 +139,7 @@ func (s *Storage) App(ctx context.Context, appID int) (models.App, error) {
 
 	err := s.DB.QueryRowContext(
 		ctx,
-		"SELECT id, name, secret FROM apps WHERE id = $1",
+		`SELECT id, name, secret FROM apps WHERE id = $1`,
 		appID).
 		Scan(&app.ID, &app.Name, &app.Secret)
 	if err != nil {
@@ -134,7 +159,7 @@ func (s *Storage) TokenSecret(ctx context.Context) (string, error) {
 
 	err := s.DB.QueryRowContext(
 		ctx,
-		"SELECT secret FROM apps",
+		`SELECT secret FROM apps`,
 	).Scan(&tokenSecret)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
