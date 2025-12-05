@@ -26,9 +26,14 @@ jobs:
       - name: Download dependencies
         run: go mod download || true
 
-      - name: Run Tests
-        working-directory: .
-        run: go work sync && go test ./... -v
+      - name: Run tests (auth)
+        run: cd sso && go test ./... -v
+
+      - name: Run tests (url-shortener)
+        run: cd url-shortener && go test ./... -v
+
+      - name: Run tests (analytics)
+        run: cd analytics && go test ./... -v
 
       - name: Build sso
         run: go build -o sso ./sso/cmd/sso/main.go
