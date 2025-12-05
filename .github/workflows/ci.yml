@@ -12,28 +12,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Go
+      - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
+          go-version: '1.25'
 
-      - name: Sync go.work
-        run: go work sync
+      - name: Test SSO service
+        working-directory: ./sso
+        run: go test ./... -v
 
-      - name: Download dependencies
-        run: go mod download || true
+      - name: Test Link Shortener service
+        working-directory: ./link-shortener
+        run: go test ./... -v
 
-      - name: Run tests (auth)
-        run: cd sso && go test ./... -v
-
-      - name: Run tests (url-shortener)
-        run: cd url-shortener && go test ./... -v
-
-      - name: Run tests (analytics)
-        run: cd analytics && go test ./... -v
+      - name: Test Analytics service
+        working-directory: ./analytics
+        run: go test ./... -v
 
       - name: Build sso
         run: go build -o sso ./sso/cmd/sso/main.go
