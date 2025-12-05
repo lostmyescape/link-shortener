@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test-build:
+    name: Test & Build Go services
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Sync go.work
+        run: go work sync
+
+      - name: Download dependencies
+        run: go mod download || true
+
+      - name: Run tests
+        run: go test ./... -v
+
+      - name: Build sso
+        run: go build -o sso ./sso/cmd/sso/main.go
+
+      - name: Build url-shortener
+        run: go build -o url-shortener ./url-shortener/cmd/main.go
+
+      - name: Build analytics
+        run: go build -o analytics ./analytics/cmd/main.go
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+
+      - name: Build Docker images
+        run: |
+          docker build -t sso ./sso
+          docker build -t url-shortener ./url-shortener
+          docker build -t analytics ./analytics

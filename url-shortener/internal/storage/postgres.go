@@ -1,13 +1,17 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
+	"time"
 
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
+	"github.com/lostmyescape/link-shortener/common/logger/sl"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/config"
 )
 
@@ -16,7 +20,29 @@ type Storage struct {
 }
 
 // NewStorage соберет и вернет объект storage
-func NewStorage(cfg *config.Config) (*Storage, error) {
+func NewStorage(ctx context.Context, cfg *config.Config, log *slog.Logger) *Storage {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
+	defer cancel()
+
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			panic("timeout waiting for postgresql")
+		case <-ticker.C:
+			conn, err := connect(cfg)
+			if err == nil {
+				log.Info("postgresql connected successfully")
+				return conn
+			}
+			log.Error("postgresql not ready, retrying...", sl.Err(err))
+		}
+	}
+}
+
+func connect(cfg *config.Config) (*Storage, error) {
 	dsn := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		cfg.Storage.Host,
@@ -29,27 +55,14 @@ func NewStorage(cfg *config.Config) (*Storage, error) {
 
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка подключения к БД: %w", err)
+		return nil, fmt.Errorf("postgresql connection error: %w", err)
 	}
 
 	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("не удалось подключиться к БД: %w", err)
+		return nil, fmt.Errorf("postgresql ping failed: %w", err)
 	}
-	log.Println("Подключение к postgres установлено!")
 
-	// Выполняем SQL-запрос на создание таблицы
-	createTable := `
-    CREATE TABLE IF NOT EXISTS url (
-        id SERIAL PRIMARY KEY,
-        alias TEXT NOT NULL UNIQUE,
-        url TEXT NOT NULL UNIQUE
-    );
-    CREATE INDEX IF NOT EXISTS idx_alias ON url(alias);
-    `
-	_, err = db.Exec(createTable)
-	if err != nil {
-		return nil, fmt.Errorf("ошибка при создании таблицы url: %w", err)
-	}
+	log.Println("successful database connection")
 
 	return &Storage{DB: db}, nil
 }
@@ -58,7 +71,7 @@ func (s *Storage) SaveURL(urlToSave string, alias string) (int64, error) {
 	const op = "storage.postgres.SaveUrl"
 
 	var id int64
-	query := "INSERT INTO url(url, alias) VALUES ($1, $2) RETURNING id"
+	query := `INSERT INTO url(url, alias) VALUES ($1, $2) RETURNING id`
 
 	err := s.DB.QueryRow(query, urlToSave, alias).Scan(&id)
 	if err != nil {

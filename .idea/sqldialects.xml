@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/analytics/internal/clickhouse/batch.go" dialect="ClickHouse" />
+    <file url="file://$PROJECT_DIR$/analytics/migrations/1_create_user_events.sql" dialect="ClickHouse" />
+    <file url="file://$PROJECT_DIR$/analytics/migrations/2_create_link_events.sql" dialect="ClickHouse" />
+    <file url="file://$PROJECT_DIR$/analytics/migrations/2_drop_link_events.sql" dialect="ClickHouse" />
     <file url="file://$PROJECT_DIR$/sso/migrations/1_init.down.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/sso/migrations/1_init.up.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/sso/migrations/2_add_is_admin_column.down.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/sso/migrations/2_add_is_admin_column.up.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/sso/migrations/3_add_secret_key.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/url-shortener/internal/storage/postgres.go" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/url-shortener/migrations/1_init.up.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/url-shortener/migrations/2_init.down.sql" dialect="PostgreSQL" />
   </component>
 </project>

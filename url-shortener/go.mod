@@ -1,6 +1,6 @@
 module github.com/lostmyescape/link-shortener/url-shortener
 
-go 1.25.0
+go 1.25.3
 
 require (
 	github.com/brianvoe/gofakeit/v6 v6.28.0
