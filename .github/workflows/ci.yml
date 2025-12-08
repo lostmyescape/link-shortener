@@ -12,14 +12,25 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      db:
+      postgres:
         image: postgres:16
         ports:
           - 5432:5432
         env:
-          POSTGRES_PASSWORD: example
+          POSTGRES_PASSWORD: asdfg
+          POSTGRES_DB: auth_db
         options: >-
           --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:  # если нужен Redis
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
@@ -32,28 +43,58 @@ jobs:
         with:
           go-version: '1.25'
 
-      - name: Start docker-compose
+      - name: Wait for PostgreSQL to be ready
         run: |
-          docker compose -f infra/docker-compose.yml up -d
-          sleep 10
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 && break
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
+      - name: Create test databases
+        run: |
+          PGPASSWORD=example psql -h localhost -U postgres -c "CREATE DATABASE sso_test;"
+          PGPASSWORD=example psql -h localhost -U postgres -c "CREATE DATABASE url_shortener_test;"
+          PGPASSWORD=example psql -h localhost -U postgres -c "CREATE DATABASE analytics_test;"
 
       - name: Test SSO service
         working-directory: ./sso
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: example
+          DB_NAME: sso_test
+          DB_SSL_MODE: disable
         run: go test ./... -v
 
       - name: Test Link Shortener service
         working-directory: ./link-shortener
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: example
+          DB_NAME: url_shortener_test
+          DB_SSL_MODE: disable
         run: go test ./... -v
 
       - name: Test Analytics service
         working-directory: ./analytics
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: example
+          DB_NAME: analytics_test
+          DB_SSL_MODE: disable
         run: go test ./... -v
 
       - name: Build sso
         run: go build -o sso ./sso/cmd/sso/main.go
 
       - name: Build url-shortener
-        run: go build -o url-shortener ./url-shortener/cmd/main.go
+        run: go build -o url-shortener ./link-shortener/cmd/main.go
 
       - name: Build analytics
         run: go build -o analytics ./analytics/cmd/main.go
@@ -66,5 +107,5 @@ jobs:
       - name: Build Docker images
         run: |
           docker build -t sso ./sso
-          docker build -t url-shortener ./url-shortener
+          docker build -t url-shortener ./link-shortener
           docker build -t analytics ./analytics
