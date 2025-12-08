@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/analytics/internal/clickhouse/batch.go" value="8e0e28e6-f7ec-443c-852c-7124708985d1" />
+    <file url="file://$PROJECT_DIR$/analytics/migrations/1_create_user_events.sql" value="8e0e28e6-f7ec-443c-852c-7124708985d1" />
+    <file url="file://$PROJECT_DIR$/analytics/migrations/2_create_link_events.sql" value="8e0e28e6-f7ec-443c-852c-7124708985d1" />
+    <file url="file://$PROJECT_DIR$/analytics/migrations/2_drop_link_events.sql" value="8e0e28e6-f7ec-443c-852c-7124708985d1" />
     <file url="file://$PROJECT_DIR$/sso/migrations/1_init.down.sql" value="7bb3f37e-3e2b-4ab5-b48f-7af4fafc4aeb" />
     <file url="file://$PROJECT_DIR$/sso/migrations/1_init.up.sql" value="7bb3f37e-3e2b-4ab5-b48f-7af4fafc4aeb" />
     <file url="file://$PROJECT_DIR$/sso/migrations/2_add_is_admin_column.down.sql" value="a167cf5c-e5b0-4c63-b753-fe55816c011e" />
     <file url="file://$PROJECT_DIR$/sso/migrations/2_add_is_admin_column.up.sql" value="a167cf5c-e5b0-4c63-b753-fe55816c011e" />
+    <file url="file://$PROJECT_DIR$/sso/migrations/3_add_secret_key.sql" value="a167cf5c-e5b0-4c63-b753-fe55816c011e" />
+    <file url="file://$PROJECT_DIR$/url-shortener/migrations/1_init.up.sql" value="7bb3f37e-3e2b-4ab5-b48f-7af4fafc4aeb" />
+    <file url="file://$PROJECT_DIR$/url-shortener/migrations/2_init.down.sql" value="7bb3f37e-3e2b-4ab5-b48f-7af4fafc4aeb" />
   </component>
 </project>

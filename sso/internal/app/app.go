@@ -1,12 +1,11 @@
 package app
 
 import (
+	"context"
 	"log/slog"
-	"os"
 	"time"
 
-	"github.com/lostmyescape/link-shortener/common/kafka/producer"
-	"github.com/lostmyescape/link-shortener/common/logger/sl"
+	"github.com/lostmyescape/link-shortener/common/kafka"
 	grpcapp "github.com/lostmyescape/link-shortener/sso/internal/app/grpc"
 	"github.com/lostmyescape/link-shortener/sso/internal/config"
 	"github.com/lostmyescape/link-shortener/sso/internal/lib/tokenstore"
@@ -25,15 +24,11 @@ func New(
 	tokenTTL time.Duration,
 	rTokenTTL time.Duration,
 	tokenStore *tokenstore.TokenStore,
-	producerProvider *producer.Producer,
+	producerProvider *kafka.Producer,
 	ip string,
 ) *App {
 
-	storage, err := postgres.NewStorage(cfg)
-	if err != nil {
-		log.Error("db connection error: %v", sl.Err(err))
-		os.Exit(1)
-	}
+	storage := postgres.NewStorage(context.Background(), cfg, log)
 
 	authService := auth.New(
 		log,

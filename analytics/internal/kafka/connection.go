@@ -2,14 +2,13 @@ package kafka
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/segmentio/kafka-go"
 )
 
-func MustLoad(ctx context.Context, log *slog.Logger, brokers []string) error {
+func MustLoad(ctx context.Context, log *slog.Logger, brokers []string) {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  brokers,
 		Topic:    "healthcheck",
@@ -22,16 +21,16 @@ func MustLoad(ctx context.Context, log *slog.Logger, brokers []string) error {
 
 	for {
 		if err := r.SetOffset(kafka.LastOffset); err == nil {
-			log.Info("Kafka ready")
+			log.Info("Kafka is ready")
 			r.Close()
-			return nil
+			break
 		}
 
 		log.Warn("Kafka not ready, retrying...")
 		time.Sleep(time.Second * 2)
 
 		if ctx.Err() != nil {
-			return fmt.Errorf("timeout waiting for Kafka")
+			panic("timeout waiting for kafka")
 		}
 	}
 }

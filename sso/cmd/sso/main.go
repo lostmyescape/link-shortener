@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/lostmyescape/link-shortener/common/kafka/producer"
+	"github.com/lostmyescape/link-shortener/common/kafka"
 	"github.com/lostmyescape/link-shortener/common/logger/slogpretty"
 	"github.com/lostmyescape/link-shortener/sso/internal/app"
 	"github.com/lostmyescape/link-shortener/sso/internal/config"
@@ -23,25 +23,17 @@ const (
 
 func main() {
 	cfg := config.MustLoad()
-
 	log := setupLogger(cfg.Env)
+	rdb := redisClient.NewClient(cfg)
+	tokenStore := tokenstore.NewRedisStore(rdb)
+	producerProvider := kafka.NewProducer(cfg.Kafka.Brokers, cfg.Kafka.Topic)
 
-	log.Info("starting application", slog.Any("env", cfg))
-
-	rdb, err := redisClient.NewClient(cfg)
-	if err != nil {
-		panic(err)
-	}
 	defer func(rdb *redis.Client) {
 		err := rdb.Close()
 		if err != nil {
 			log.Error("failed to close Redis")
 		}
 	}(rdb)
-
-	tokenStore := tokenstore.NewRedisStore(rdb)
-
-	producerProvider := producer.NewProducer(cfg.Kafka.Brokers, cfg.Kafka.Topic)
 
 	application := app.New(
 		log,
@@ -54,17 +46,18 @@ func main() {
 		cfg.Kafka.Ip,
 	)
 
+	log.Info("starting sso", slog.Any("env", cfg))
+
 	go application.GRPCSrv.MustRun()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
 
 	sign := <-stop
-
 	log.Info("application stopping", slog.String("signal", sign.String()))
+
 	application.GRPCSrv.Stop()
 	log.Info("Application stopped")
-
 }
 
 func setupLogger(env string) *slog.Logger {
