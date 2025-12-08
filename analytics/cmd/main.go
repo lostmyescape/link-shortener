@@ -5,10 +5,9 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/lostmyescape/link-shortener/analytics/internal/clickhouse"
 	"github.com/lostmyescape/link-shortener/analytics/internal/config"
-	"github.com/lostmyescape/link-shortener/analytics/internal/kafka/kafka"
-	"github.com/lostmyescape/link-shortener/common/kafka/consumer"
-	"github.com/lostmyescape/link-shortener/common/logger/sl"
+	"github.com/lostmyescape/link-shortener/analytics/internal/kafka"
 	"github.com/lostmyescape/link-shortener/common/logger/slogpretty"
 )
 
@@ -22,25 +21,21 @@ func main() {
 	cfg := config.MustLoad()
 	log := setupLogger(cfg.Env)
 	ctx := context.Background()
+	kafka.MustLoad(ctx, log, cfg.Kafka.Brokers)
+	conn := clickhouse.NewClickhouseClient(ctx, log, cfg)
 
-	err := kafka.MustLoad(ctx, log, cfg.Kafka.Brokers)
-	if err != nil {
-		log.Error("error connection to Kafka", sl.Err(err))
-	}
-
-	log.Info("starting analytics",
-		slog.String("env", cfg.Env),
-	)
+	log.Info("starting analytics", slog.Any("env", cfg))
 
 	topics := []string{cfg.Kafka.TopicUser, cfg.Kafka.TopicLink}
 
-	eventsConsumer := consumer.NewConsumer(
+	kafkaConsumer := kafka.NewConsumer(
 		cfg.Kafka.Brokers,
 		topics,
 		cfg.Kafka.GroupID,
 		log,
+		conn,
 	)
-	eventsConsumer.Start(ctx)
+	kafkaConsumer.Start(ctx)
 
 	<-ctx.Done()
 	log.Info("shutting down")

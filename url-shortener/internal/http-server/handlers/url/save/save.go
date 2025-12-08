@@ -11,8 +11,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
-	"github.com/lostmyescape/link-shortener/common/kafka/events"
-	"github.com/lostmyescape/link-shortener/common/kafka/producer"
+	"github.com/lostmyescape/link-shortener/common/kafka"
 	resp "github.com/lostmyescape/link-shortener/url-shortener/internal/lib/api/response"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/jwt/mdjwt"
 	"github.com/lostmyescape/link-shortener/url-shortener/internal/lib/logger/sl"
@@ -42,7 +41,7 @@ type ProducerProvider interface {
 
 const aliasLength = 6
 
-func New(log *slog.Logger, urlSaver URLSaver, producerProvider *producer.Producer) http.HandlerFunc {
+func New(log *slog.Logger, urlSaver URLSaver, producerProvider *kafka.Producer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.url.save.New"
 
@@ -111,10 +110,12 @@ func New(log *slog.Logger, urlSaver URLSaver, producerProvider *producer.Produce
 		}
 
 		ev := map[string]interface{}{
-			"type":      events.EventLinkSaved,
+			"type":      kafka.EventLinkSaved,
 			"timestamp": time.Now().UTC(),
 			"user_id":   userID,
-			"ip":        "kafka:9092",
+			"alias":     alias,
+			"url":       req.URL,
+			"link_id":   id,
 		}
 
 		err = producerProvider.Publish(ctx, strconv.FormatInt(int64(userID), 10), ev)

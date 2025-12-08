@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lostmyescape/link-shortener/common/kafka/events"
+	"github.com/lostmyescape/link-shortener/common/kafka"
 	"github.com/lostmyescape/link-shortener/common/logger/sl"
 	"github.com/lostmyescape/link-shortener/sso/internal/domain/models"
 	"github.com/lostmyescape/link-shortener/sso/internal/storage"
@@ -132,8 +132,6 @@ func (a *Auth) Login(
 		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	log.Info("user logged successfully")
-
 	token, err := jwt.NewToken(user, app, a.tokenTTL)
 	if err != nil {
 		a.log.Error("failed to generate token", sl.Err(err))
@@ -161,11 +159,14 @@ func (a *Auth) Login(
 	log.Info("tokens successfully generated")
 
 	ev := map[string]interface{}{
-		"type":      events.EventUserLoggedIn,
+		"type":      kafka.EventUserLoggedIn,
 		"timestamp": time.Now().UTC(),
 		"user_id":   user.ID,
+		"email":     user.Email,
 		"ip":        a.ip,
 	}
+
+	log.Info("user logged successfully")
 
 	err = a.producerProvider.Publish(ctx, strconv.FormatInt(user.ID, 10), ev)
 	if err != nil {
@@ -275,9 +276,10 @@ func (a *Auth) Register(
 	}
 
 	ev := map[string]interface{}{
-		"type":      events.EventUserRegistered,
+		"type":      kafka.EventUserRegistered,
 		"timestamp": time.Now().UTC(),
 		"user_id":   id,
+		"email":     email,
 		"ip":        a.ip,
 	}
 
@@ -344,9 +346,10 @@ func (a *Auth) Logout(ctx context.Context, token string) (string, error) {
 	}
 
 	ev := map[string]interface{}{
-		"type":      events.EventUserLoggedOut,
+		"type":      kafka.EventUserLoggedOut,
 		"timestamp": time.Now().UTC(),
 		"user_id":   user.ID,
+		"email":     user.Email,
 		"ip":        a.ip,
 	}
 
