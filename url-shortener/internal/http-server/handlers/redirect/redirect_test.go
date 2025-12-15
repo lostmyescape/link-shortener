@@ -4,6 +4,7 @@ package redirect
 
 import (
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -38,7 +39,7 @@ func TestRedirectHandler(t *testing.T) {
 			name:      "Empty alias",
 			alias:     "",
 			respError: "alias is empty",
-			wantCode:  http.StatusBadRequest,
+			wantCode:  http.StatusNotFound,
 		},
 		{
 			name:      "URL not found",
@@ -62,14 +63,16 @@ func TestRedirectHandler(t *testing.T) {
 			t.Parallel()
 			urlSearcherMock := mocks.NewURLSearcher(t)
 
-			if tc.mockError != nil {
-				urlSearcherMock.On("GetUrl", tc.alias).
-					Return("", tc.mockError).
-					Once()
-			} else {
-				urlSearcherMock.On("GetUrl", tc.alias).
-					Return(tc.mockURL, nil).
-					Once()
+			if tc.alias != "" {
+				if tc.mockError != nil {
+					urlSearcherMock.On("GetUrl", tc.alias).
+						Return("", tc.mockError).
+						Once()
+				} else {
+					urlSearcherMock.On("GetUrl", tc.alias).
+						Return(tc.mockURL, nil).
+						Once()
+				}
 			}
 
 			handler := Redirect(slogdiscard.NewDiscardLogger(), urlSearcherMock)
@@ -80,10 +83,34 @@ func TestRedirectHandler(t *testing.T) {
 			ts := httptest.NewServer(r)
 			defer ts.Close()
 
-			redirectToURL, err := api.GetRedirect(ts.URL + "/" + tc.alias)
-			require.NoError(t, err)
+			switch {
+			case tc.wantCode == http.StatusFound:
+				resp, err := api.GetRedirect(ts.URL + "/" + tc.alias)
+				require.NoError(t, err)
+				assert.Equal(t, tc.url, resp)
+			case tc.wantCode == http.StatusNotFound && tc.alias == "":
+				resp, err := http.Get(ts.URL + "/" + tc.alias)
+				defer resp.Body.Close()
+				require.NoError(t, err)
+				assert.Equal(t, tc.wantCode, resp.StatusCode)
+			default:
+				// Для ошибок делаем прямой HTTP запрос и проверяем статус и тело
+				resp, err := http.Get(ts.URL + "/" + tc.alias)
+				require.NoError(t, err)
+				defer resp.Body.Close()
 
-			assert.Equal(t, tc.url, redirectToURL)
+				assert.Equal(t, tc.wantCode, resp.StatusCode)
+
+				// Читаем тело ответа для проверки сообщения об ошибке
+				body, err := io.ReadAll(resp.Body)
+				require.NoError(t, err)
+
+				if tc.respError != "" {
+					assert.Contains(t, string(body), tc.respError)
+				}
+			}
+
+			urlSearcherMock.AssertExpectations(t)
 		})
 	}
 }

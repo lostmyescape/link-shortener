@@ -15,6 +15,7 @@ type Config struct {
 	RedisStorage RedisStorage  `yaml:"redis"`
 	AppSecret    string        `yaml:"app_secret" env:"APP_SECRET"`
 	Kafka        KafkaStorage
+	GRPC         GRPCConfig `yaml:"grpc"`
 	Storage      struct {
 		Host     string `yaml:"host"`
 		Port     int    `yaml:"port"`
@@ -55,6 +56,10 @@ type KafkaStorage struct {
 	Brokers []string `yaml:"brokers"`
 	Topic   string   `yaml:"topic"`
 	Ip      string   `yaml:"ip"`
+}
+type GRPCConfig struct {
+	Port    int           `yaml:"port"`
+	Timeout time.Duration `yaml:"timeout"`
 }
 
 func (c *Config) GetRedisAddr() string {

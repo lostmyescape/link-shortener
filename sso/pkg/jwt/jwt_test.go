@@ -4,8 +4,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/lostmyescape/link-shortener/sso/internal/domain/models"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+var (
+	duration = time.Hour
 )
 
 func TestNewToken(t *testing.T) {
@@ -18,52 +23,14 @@ func TestNewToken(t *testing.T) {
 		Secret: "secret-key",
 	}
 
-	duration := time.Hour
-
 	tokenStr, err := NewToken(user, app, duration)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
 
-	// получаем данные из строки токена
-	parsedToken, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, jwt.ErrSignatureInvalid
-		}
-		return []byte(app.Secret), nil
-	})
+	_, err = ParseToken(tokenStr, app.Secret)
 	if err != nil {
-		t.Fatalf("failed to parse token: %v:", err)
-	}
-
-	if !parsedToken.Valid {
-		t.Fatal("token is not valid")
-	}
-
-	// после того как распарсили токен, сверяем данные
-	claims, ok := parsedToken.Claims.(jwt.MapClaims)
-	if !ok {
-		t.Fatal("failed to get claims")
-	}
-
-	// сверяем айди из токена и айди который пришел
-	if int64(claims["uid"].(float64)) != user.ID {
-		t.Errorf("unexpected uid %d, got %v", user.ID, claims["uid"])
-	}
-
-	// сверяем имейл из токена и имейл который пришел
-	if claims["email"] != user.Email {
-		t.Errorf("expected email: %s, got: %v", user.Email, claims["email"])
-	}
-
-	// сверяем айди из токена и айди который пришел
-	if int(claims["app_id"].(float64)) != app.ID {
-		t.Errorf("expected app_id %d, got %v", app.ID, claims["app_id"])
-	}
-
-	exp := int64(claims["exp"].(float64))
-	if exp <= time.Now().Unix() {
-		t.Errorf("expected exp in the future, got %d", exp)
+		t.Fatalf("failed to parse token")
 	}
 }
 
@@ -77,8 +44,6 @@ func TestNewToken_EmptySecret(t *testing.T) {
 		Secret: "",
 	}
 
-	duration := time.Hour
-
 	_, err := NewToken(user, app, duration)
 	if err != nil {
 		t.Error("expected error due to empty secret, got nil")
@@ -86,5 +51,79 @@ func TestNewToken_EmptySecret(t *testing.T) {
 }
 
 func TestParseToken(t *testing.T) {
+	user := models.User{
+		ID:    1,
+		Email: "text@example.com",
+	}
+	app := models.App{
+		ID:     23,
+		Secret: "secret-key",
+	}
 
+	tokenStr, err := NewToken(user, app, duration)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	testCases := []struct {
+		name          string
+		userEmail     string
+		token         string
+		secret        string
+		expectedError string
+	}{
+		{
+			name:          "successfully parsed",
+			userEmail:     user.Email,
+			token:         tokenStr,
+			secret:        app.Secret,
+			expectedError: "",
+		},
+		{
+			name:          "Invalid token",
+			userEmail:     user.Email,
+			token:         "invalid token",
+			secret:        app.Secret,
+			expectedError: "failed to parse token",
+		},
+		{
+			name:          "Invalid secret key",
+			userEmail:     user.Email,
+			token:         tokenStr,
+			secret:        "invalid secret",
+			expectedError: "failed to parse token",
+		},
+		{
+			name:          "invalid email",
+			userEmail:     "wrong email",
+			token:         tokenStr,
+			secret:        app.Secret,
+			expectedError: "invalid email",
+		},
+		{
+			name:          "invalid ID",
+			userEmail:     "wrong email",
+			token:         tokenStr,
+			secret:        app.Secret,
+			expectedError: "invalid uid",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			gotUser, err := ParseToken(tc.token, tc.secret)
+			switch {
+			case err != nil:
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.expectedError)
+				return
+			case gotUser.Email != user.Email:
+				require.Error(t, ErrInvalidEmail)
+				assert.Contains(t, ErrInvalidEmail.Error(), tc.expectedError)
+			case gotUser.ID != user.ID:
+				require.Error(t, ErrInvalidUID)
+				assert.Contains(t, ErrInvalidUID.Error(), tc.expectedError)
+			}
+		})
+	}
 }

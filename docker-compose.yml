@@ -2,7 +2,7 @@ x-infra-logging: &infra-no-logs
   logging:
     driver: "json-file"
     options:
-      max-size: "10m"     # НЕ сохранять логи вообще
+      max-size: "10m"
       max-file: "3"
       mode: "non-blocking"
 
