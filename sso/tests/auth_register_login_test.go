@@ -16,7 +16,6 @@ const (
 	emptyAppID = 0
 	appID      = 1
 	appSecret  = "secret-key"
-
 	passDefLen = 10
 )
 

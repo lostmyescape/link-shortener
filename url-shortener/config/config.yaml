@@ -31,3 +31,7 @@ kafka:
     - "kafka:9092"
   topic: "link-events"
   ip: "kafka:9092"
+
+grpc:
+  port: 44045
+  timeout: 10h

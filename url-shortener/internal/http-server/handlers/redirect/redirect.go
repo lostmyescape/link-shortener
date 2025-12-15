@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -27,16 +28,13 @@ func Redirect(log *slog.Logger, searchUrl URLSearcher) http.HandlerFunc {
 		)
 
 		alias := chi.URLParam(r, "alias")
-
-		// validate request
-		if alias == "" {
+		if strings.Trim(alias, " ") == "" {
 			log.Error("alias is empty")
-			resp.NewJSON(w, r, http.StatusBadRequest, resp.Error("alias is empty"))
+			resp.NewJSON(w, r, http.StatusBadRequest, resp.Error("invalid request"))
 
 			return
 		}
 
-		// trying to get a url
 		url, err := searchUrl.GetUrl(alias)
 		if errors.Is(err, storage.ErrURLNotFound) {
 			log.Info("URL not found", slog.String("alias", alias))
@@ -44,7 +42,6 @@ func Redirect(log *slog.Logger, searchUrl URLSearcher) http.HandlerFunc {
 
 			return
 		}
-
 		if err != nil {
 			log.Error("failed searching URL", sl.Err(err))
 			resp.NewJSON(w, r, http.StatusInternalServerError, resp.Error("internal error"))

@@ -121,7 +121,6 @@ func TestSaveHandler(t *testing.T) {
 			var resp Response
 
 			require.NoError(t, json.Unmarshal([]byte(body), &resp))
-			// смотрим что ошибка, которую вернул хендлер == ошибке которая определена в тест кейсе
 			require.Equal(t, tc.respError, resp.Error)
 		})
 	}

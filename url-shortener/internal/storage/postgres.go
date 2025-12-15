@@ -99,7 +99,7 @@ func (s *Storage) GetUrl(alias string) (string, error) {
 
 	err := s.DB.QueryRow(`SELECT url FROM url WHERE alias = $1`, alias).Scan(&urlString)
 	if errors.Is(err, sql.ErrNoRows) {
-		return "", fmt.Errorf("url not found: %w", err)
+		return "", ErrURLNotFound
 	}
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", op, err)
